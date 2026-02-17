@@ -1,0 +1,123 @@
+<aside id="sidebar" th:fragment="sidebar"
+    class="w-64 flex-shrink-0 bg-sidebar-light dark:bg-sidebar-dark border-r border-slate-200 dark:border-slate-800 flex flex-col transition-all duration-300 relative">
+    <button id="toggleSidebar"
+        class="absolute -right-3 top-9 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full p-1 shadow-md hover:text-primary transition-transform z-50">
+        <span class="material-symbols-outlined text-sm">chevron_left</span>
+    </button>
+    <div class="h-20 flex items-center px-8">
+        <div class="flex items-center overflow-hidden">
+            <span
+                class="text-2xl font-bold text-primary dark:text-white tracking-[0.15em] sidebar-text transition-opacity duration-300">NOMOS</span>
+            <span
+                class="ml-2 text-slate-300 dark:text-slate-600 font-light text-xs tracking-widest mt-1 sidebar-text transition-opacity duration-300">LAB</span>
+        </div>
+    </div>
+    <nav class="flex-1 px-5 space-y-1.5 overflow-y-auto mt-4">
+        <a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-white shadow-md shadow-blue-500/20 transition-all overflow-hidden whitespace-nowrap"
+            href="/">
+            <span class="material-symbols-outlined text-[22px] min-w-[22px]">home</span>
+            <span class="text-sm font-semibold sidebar-text transition-opacity duration-300">Home</span>
+        </a>
+        <div class="pt-4 pb-2 px-4">
+            <span
+                class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] sidebar-text transition-all duration-300 origin-left whitespace-nowrap block">Menu</span>
+        </div>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-primary dark:hover:text-blue-400 transition-all group overflow-hidden whitespace-nowrap"
+            href="/parametrizar-matrizes">
+            <span class="material-symbols-outlined text-[22px] min-w-[22px]">grid_view</span>
+            <span class="text-sm font-medium sidebar-text transition-opacity duration-300">Parametrizar
+                Matrizes</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-primary dark:hover:text-blue-400 transition-all group overflow-hidden whitespace-nowrap"
+            href="/escopo-testes">
+            <span class="material-symbols-outlined text-[22px] min-w-[22px]">language</span>
+            <span class="text-sm font-medium sidebar-text transition-opacity duration-300">Escopo de
+                Testes</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-primary dark:hover:text-blue-400 transition-all group overflow-hidden whitespace-nowrap"
+            href="/planejamento">
+            <span class="material-symbols-outlined text-[22px] min-w-[22px]">calendar_month</span>
+            <span class="text-sm font-medium sidebar-text transition-opacity duration-300">Planejamento</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-primary dark:hover:text-blue-400 transition-all group overflow-hidden whitespace-nowrap"
+            href="/execucao">
+            <span class="material-symbols-outlined text-[22px] min-w-[22px]">play_circle</span>
+            <span class="text-sm font-medium sidebar-text transition-opacity duration-300">Execução</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-primary dark:hover:text-blue-400 transition-all group overflow-hidden whitespace-nowrap"
+            href="/planos-acao">
+            <span class="material-symbols-outlined text-[22px] min-w-[22px]">assignment</span>
+            <span class="text-sm font-medium sidebar-text transition-opacity duration-300">Planos de Ação</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-primary dark:hover:text-blue-400 transition-all group overflow-hidden whitespace-nowrap"
+            href="/dashboards">
+            <span class="material-symbols-outlined text-[22px] min-w-[22px]">analytics</span>
+            <span class="text-sm font-medium sidebar-text transition-opacity duration-300">Dashboards</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-primary dark:hover:text-blue-400 transition-all group overflow-hidden whitespace-nowrap"
+            href="/gestao-usuarios">
+            <span class="material-symbols-outlined text-[22px] min-w-[22px]">manage_accounts</span>
+            <span class="text-sm font-medium sidebar-text transition-opacity duration-300">Gestão de
+                Usuários</span>
+        </a>
+    </nav>
+    <div class="p-6">
+        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                    MR
+                </div>
+                <div class="flex flex-col min-w-0 sidebar-text transition-opacity duration-300">
+                    <span class="text-xs font-bold text-slate-900 dark:text-white truncate">Master Root</span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 truncate">Administrador</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Ensure this script runs even if loaded via fragment
+        (function () {
+            const sidebar = document.getElementById('sidebar');
+            const toggleSidebar = document.getElementById('toggleSidebar');
+            // Check if elements exist to avoid null errors on other pages if structure differs
+            if (!sidebar || !toggleSidebar) return;
+
+            const toggleIcon = toggleSidebar.querySelector('span');
+            const sidebarTexts = document.querySelectorAll('.sidebar-text');
+            let isCollapsed = false;
+
+            // Simple function to update UI state
+            function updateSidebarState() {
+                if (isCollapsed) {
+                    sidebar.classList.remove('w-64');
+                    sidebar.classList.add('w-[88px]');
+                    toggleIcon.innerText = 'chevron_right';
+                    sidebarTexts.forEach(text => {
+                        text.classList.add('opacity-0', 'pointer-events-none');
+                    });
+                } else {
+                    sidebar.classList.remove('w-[88px]');
+                    sidebar.classList.add('w-64');
+                    toggleIcon.innerText = 'chevron_left';
+                    sidebarTexts.forEach(text => {
+                        text.classList.remove('opacity-0', 'pointer-events-none');
+                    });
+                }
+            }
+
+            // Restore state from localStorage if you want persistence (optional enhancement)
+            const savedState = localStorage.getItem('sidebarCollapsed');
+            if (savedState === 'true') {
+                isCollapsed = true;
+                updateSidebarState();
+            }
+
+            toggleSidebar.addEventListener('click', () => {
+                isCollapsed = !isCollapsed;
+                localStorage.setItem('sidebarCollapsed', isCollapsed); // Persist state across navigation
+                updateSidebarState();
+            });
+        })();
+    </script>
+</aside>

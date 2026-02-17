@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Planos de Ação - Nomos</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#1e40af", secondary: "#3b82f6",
+                        "background-light": "#f8fafc", "background-dark": "#0f172a",
+                        "surface-light": "#ffffff", "surface-dark": "#1e293b",
+                        "sidebar-light": "#ffffff", "sidebar-dark": "#111827",
+                    },
+                    fontFamily: { display: ["Inter", "sans-serif"], body: ["Inter", "sans-serif"] },
+                    borderRadius: { DEFAULT: "0.5rem", xl: "1rem", '2xl': "1.5rem" },
+                },
+            },
+        };
+    </script>
+    <style type="text/tailwindcss">
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 antialiased transition-colors duration-200">
+    <div class="flex h-screen overflow-hidden">
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+        <main class="flex-1 overflow-y-auto">
+            <header
+                class="h-20 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-10 sticky top-0 z-20">
+                <div class="flex items-center gap-3">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Acesso Rápido:</span>
+                    <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                        <button
+                            class="px-3 py-1.5 text-xs font-semibold text-primary bg-white rounded-md shadow-sm">Atalhos</button>
+                        <button class="px-3 py-1.5 text-xs font-medium text-slate-500">Recentes</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div
+                        class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-primary rounded-full border border-blue-100">
+                        <span class="material-symbols-outlined text-base">person_search</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider">Simular Perfil: Master Root</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-10 max-w-[1400px] mx-auto space-y-10 pb-20">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Planos de Ação
+                        Corretiva</h1>
+                    <p class="text-slate-500 mt-2 text-lg">Gerencie ações para correção de não-conformidades detectadas.
+                    </p>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex gap-8 border-b border-slate-200 dark:border-slate-700">
+                    <button onclick="switchTab('active')" id="tab-active"
+                        class="tab-btn pb-4 text-sm font-bold border-b-2 border-primary text-primary transition-all">Ações
+                        Pendentes</button>
+                    <button onclick="switchTab('completed')" id="tab-completed"
+                        class="tab-btn pb-4 text-sm font-bold border-b-2 border-transparent text-slate-400 transition-all">Histórico
+                        Concluído</button>
+                </div>
+
+                <!-- ==================== ACTIVE PLANS ==================== -->
+                <div id="panel-active" class="tab-panel">
+                    <!-- Creation form (when coming from Execução) -->
+                    <div id="creation-form" class="hidden mb-8">
+                        <div
+                            class="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-200/60 dark:border-slate-700 shadow-sm">
+                            <h3 class="font-extrabold text-lg text-slate-900 dark:text-white mb-6">Criar Novo Plano de
+                                Ação</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <!-- Left: Plan details -->
+                                <div class="space-y-4">
+                                    <div
+                                        class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800">
+                                        <p class="text-[10px] font-bold text-primary uppercase mb-1">Originado da
+                                            Execução:</p>
+                                        <p id="creation-exec-info"
+                                            class="text-sm font-bold text-slate-700 dark:text-slate-300"></p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label
+                                            class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Descrição
+                                            do Problema / Plano</label>
+                                        <textarea id="creation-desc"
+                                            class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none min-h-[100px] text-sm"
+                                            placeholder="Descreva o plano de ação..."></textarea>
+                                    </div>
+                                    <div class="border-t border-slate-100 dark:border-slate-700 pt-4 space-y-3">
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                            Adicionar Etapas do Plano</p>
+                                        <div class="flex gap-2">
+                                            <input type="text" id="step-desc" placeholder="Descrição da etapa..."
+                                                class="flex-1 p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none" />
+                                            <input type="text" id="step-resp" placeholder="Responsável"
+                                                class="w-36 p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none" />
+                                            <input type="date" id="step-deadline"
+                                                class="p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none" />
+                                            <button onclick="addStep()"
+                                                class="bg-primary text-white px-3 rounded-lg hover:bg-blue-700 transition-all">
+                                                <span class="material-symbols-outlined text-lg">add</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Right: Steps list -->
+                                <div class="space-y-3">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Etapas
+                                        Adicionadas (<span id="step-count">0</span>)</p>
+                                    <div id="steps-preview" class="space-y-2 max-h-[300px] overflow-y-auto"></div>
+                                    <button onclick="createPlan()"
+                                        class="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-lg hover:bg-blue-700 transition-all text-sm mt-4">
+                                        Finalizar e Abrir Plano
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Plan detail view -->
+                    <div id="plan-detail" class="hidden mb-8">
+                        <button onclick="closePlanDetail()"
+                            class="text-primary font-bold text-xs hover:underline mb-4 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">arrow_back</span> Voltar à lista
+                        </button>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Left: Context -->
+                            <div
+                                class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200/60 dark:border-slate-700 shadow-sm space-y-6">
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                                        Contexto da Inconformidade</p>
+                                    <p id="detail-desc" class="text-sm text-slate-700 dark:text-slate-300"></p>
+                                </div>
+                                <div id="detail-exec-info"
+                                    class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800 text-xs">
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                                        Checklist de Etapas</p>
+                                    <div id="detail-steps" class="space-y-2"></div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                                        Progresso</p>
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+                                            <div id="detail-progress-bar"
+                                                class="bg-primary h-3 rounded-full transition-all" style="width:0%">
+                                            </div>
+                                        </div>
+                                        <span id="detail-progress-pct" class="text-xs font-bold text-primary">0%</span>
+                                    </div>
+                                </div>
+                                <button id="btn-finalize" onclick="finalizePlan()"
+                                    class="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-700 transition-all text-sm hidden">
+                                    Concluir Plano de Ação
+                                </button>
+                            </div>
+                            <!-- Right: Messages -->
+                            <div
+                                class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/60 dark:border-slate-700 shadow-sm flex flex-col h-[600px]">
+                                <div class="p-4 border-b border-slate-100 dark:border-slate-700">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        Comunicação do Plano</p>
+                                </div>
+                                <div id="detail-messages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+                                <div class="p-4 border-t border-slate-100 dark:border-slate-700 flex gap-2">
+                                    <input type="text" id="msg-input" placeholder="Enviar mensagem..."
+                                        class="flex-1 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
+                                        onkeydown="if(event.key==='Enter')sendMessage()" />
+                                    <button onclick="sendMessage()"
+                                        class="bg-primary text-white px-4 rounded-xl hover:bg-blue-700 transition-all">
+                                        <span class="material-symbols-outlined text-lg">send</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Plans list table -->
+                    <div id="plans-list">
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/60 dark:border-slate-700 shadow-sm overflow-hidden">
+                            <table class="w-full text-left">
+                                <thead
+                                    class="bg-slate-50 dark:bg-slate-900/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    <tr>
+                                        <th class="px-8 py-5">Data Criação</th>
+                                        <th class="px-8 py-5">Teste Origem</th>
+                                        <th class="px-8 py-5">Descrição</th>
+                                        <th class="px-8 py-5">Progresso</th>
+                                        <th class="px-6 py-5 text-right">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="active-tbody" class="divide-y divide-slate-100 dark:divide-slate-700">
+                                </tbody>
+                            </table>
+                            <div id="active-empty"
+                                class="hidden px-8 py-20 text-center text-slate-300 font-bold uppercase tracking-widest text-xs">
+                                Nenhum plano de ação pendente.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== COMPLETED PLANS ==================== -->
+                <div id="panel-completed" class="tab-panel hidden">
+                    <div
+                        class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/60 dark:border-slate-700 shadow-sm overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead
+                                class="bg-slate-50 dark:bg-slate-900/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                <tr>
+                                    <th class="px-8 py-5">Data</th>
+                                    <th class="px-8 py-5">Teste</th>
+                                    <th class="px-8 py-5">Descrição</th>
+                                    <th class="px-8 py-5">Etapas</th>
+                                    <th class="px-6 py-5 text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="completed-tbody" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+                        </table>
+                        <div id="completed-empty"
+                            class="hidden px-8 py-20 text-center text-slate-300 font-bold uppercase tracking-widest text-xs">
+                            Nenhum plano concluído.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"
+        class="fixed bottom-6 right-6 bg-emerald-600 text-white px-6 py-3 rounded-2xl shadow-2xl font-bold text-sm z-[300] transition-all duration-500 opacity-0 translate-y-4 pointer-events-none flex items-center gap-2">
+        <span class="material-symbols-outlined text-lg">check_circle</span>
+        <span id="toast-msg">Salvo!</span>
+    </div>
+
+    <script>
+        const currentUser = JSON.parse(localStorage.getItem('nomos_current_session') || JSON.stringify({
+            id: 'master-0', name: 'Master Root', email: 'root@nomos.lab', role: 'Master', position: 'Admin Global', empresaId: ''
+        }));
+
+        let actionPlans = [];
+        let pendingSteps = [];
+        let incomingExecution = null;
+        let activePlanId = null;
+
+        function init() {
+            if (!currentUser.empresaId) {
+                const empresas = JSON.parse(localStorage.getItem('nomos_empresas') || '[]');
+                if (empresas.length > 0) currentUser.empresaId = empresas[0].id;
+            }
+
+            actionPlans = JSON.parse(localStorage.getItem('nomos_action_plans') || '[]');
+
+            // Check if incoming from Execução
+            const incoming = localStorage.getItem('nomos_execution_for_plan');
+            if (incoming) {
+                incomingExecution = JSON.parse(incoming);
+                localStorage.removeItem('nomos_execution_for_plan');
+                showCreationForm();
+            }
+
+            // Check if viewing specific plan via query param
+            const urlParams = new URLSearchParams(window.location.search);
+            const planId = urlParams.get('planId');
+            if (planId) {
+                openPlanDetail(planId);
+            }
+
+            renderActivePlans();
+            renderCompletedPlans();
+        }
+
+        // ====================== TAB SWITCHING ======================
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('border-primary', 'text-primary');
+                b.classList.add('border-transparent', 'text-slate-400');
+            });
+            document.getElementById('panel-' + tab).classList.remove('hidden');
+            const btn = document.getElementById('tab-' + tab);
+            btn.classList.add('border-primary', 'text-primary');
+            btn.classList.remove('border-transparent', 'text-slate-400');
+        }
+
+        // ====================== CREATION FORM ======================
+        function showCreationForm() {
+            document.getElementById('creation-form').classList.remove('hidden');
+            if (incomingExecution) {
+                document.getElementById('creation-exec-info').textContent =
+                    `${incomingExecution.testName} — ${incomingExecution.area || ''} — Conformidade: ${incomingExecution.compliance?.toFixed(1)}% — Ação: ${incomingExecution.maintenanceAction || 'N/A'}`;
+            }
+        }
+
+        function addStep() {
+            const desc = document.getElementById('step-desc').value.trim();
+            const resp = document.getElementById('step-resp').value.trim();
+            const deadline = document.getElementById('step-deadline').value;
+            if (!desc) { alert('Informe a descrição da etapa.'); return; }
+            pendingSteps.push({ id: Date.now().toString(), description: desc, responsible: resp, deadline, done: false });
+            document.getElementById('step-desc').value = '';
+            document.getElementById('step-resp').value = '';
+            document.getElementById('step-deadline').value = '';
+            renderStepsPreview();
+        }
+
+        function removeStep(id) {
+            pendingSteps = pendingSteps.filter(s => s.id !== id);
+            renderStepsPreview();
+        }
+
+        function renderStepsPreview() {
+            document.getElementById('step-count').textContent = pendingSteps.length;
+            document.getElementById('steps-preview').innerHTML = pendingSteps.length === 0
+                ? '<p class="text-center text-slate-300 text-xs py-10 font-bold uppercase">Nenhuma etapa adicionada</p>'
+                : pendingSteps.map(s => `
+                    <div class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl group">
+                        <span class="material-symbols-outlined text-lg text-slate-300">radio_button_unchecked</span>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">${s.description}</p>
+                            <p class="text-[9px] text-slate-400">${s.responsible || 'Sem responsável'} ${s.deadline ? '· Prazo: ' + s.deadline : ''}</p>
+                        </div>
+                        <button onclick="removeStep('${s.id}')" class="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                            <span class="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                    </div>
+                `).join('');
+        }
+
+        function createPlan() {
+            const desc = document.getElementById('creation-desc').value.trim();
+            if (!desc) { alert('Preencha a descrição do plano.'); return; }
+            if (pendingSteps.length === 0) { alert('Adicione ao menos uma etapa.'); return; }
+
+            const plan = {
+                id: Date.now().toString(),
+                empresaId: currentUser.empresaId,
+                executionId: incomingExecution ? incomingExecution.id : '',
+                testName: incomingExecution ? incomingExecution.testName : '',
+                area: incomingExecution ? incomingExecution.area : '',
+                description: desc,
+                steps: [...pendingSteps],
+                messages: [
+                    { id: Date.now().toString(), type: 'system', text: 'Plano de ação criado por ' + currentUser.name, date: new Date().toLocaleString('pt-BR') }
+                ],
+                status: 'active',
+                createdAt: new Date().toLocaleDateString('pt-BR'),
+                createdBy: currentUser.name,
+                detalhamento: incomingExecution ? incomingExecution.detalhamento : '',
+                anexos: incomingExecution ? incomingExecution.anexos : []
+            };
+
+            actionPlans.push(plan);
+            localStorage.setItem('nomos_action_plans', JSON.stringify(actionPlans));
+
+            // Reset
+            pendingSteps = [];
+            incomingExecution = null;
+            document.getElementById('creation-form').classList.add('hidden');
+            renderActivePlans();
+            openPlanDetail(plan.id);
+            showToast('Plano de ação criado!');
+        }
+
+        // ====================== PLAN DETAIL ======================
+        function openPlanDetail(planId) {
+            const plan = actionPlans.find(p => p.id === planId);
+            if (!plan) return;
+            activePlanId = planId;
+
+            document.getElementById('plans-list').classList.add('hidden');
+            document.getElementById('creation-form').classList.add('hidden');
+            document.getElementById('plan-detail').classList.remove('hidden');
+
+            document.getElementById('detail-desc').textContent = plan.description;
+
+            // Exec info
+            const execInfo = document.getElementById('detail-exec-info');
+            if (plan.detalhamento || plan.testName) {
+                execInfo.classList.remove('hidden');
+                execInfo.innerHTML = `
+                    <p class="font-bold text-primary mb-1">${plan.testName} — ${plan.area || ''}</p>
+                    ${plan.detalhamento ? `<p class="text-slate-500 mt-1">${plan.detalhamento}</p>` : ''}
+                    ${plan.anexos && plan.anexos.length > 0 ? `<p class="mt-2 text-slate-400">Anexos: ${plan.anexos.join(', ')}</p>` : ''}
+                `;
+            } else {
+                execInfo.classList.add('hidden');
+            }
+
+            renderDetailSteps(plan);
+            renderDetailMessages(plan);
+
+            // Show finalize button if all steps done
+            const allDone = plan.steps.length > 0 && plan.steps.every(s => s.done);
+            document.getElementById('btn-finalize').classList.toggle('hidden', !allDone || plan.status === 'completed');
+        }
+
+        function renderDetailSteps(plan) {
+            const container = document.getElementById('detail-steps');
+            container.innerHTML = plan.steps.map(s => `
+                <div class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${s.done ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100'}"
+                     onclick="toggleStep('${plan.id}', '${s.id}')">
+                    <span class="material-symbols-outlined text-lg ${s.done ? 'text-emerald-500' : 'text-slate-300'}">${s.done ? 'check_circle' : 'radio_button_unchecked'}</span>
+                    <div class="flex-1">
+                        <p class="text-xs font-bold ${s.done ? 'text-emerald-700 dark:text-emerald-400 line-through' : 'text-slate-700 dark:text-slate-300'}">${s.description}</p>
+                        <p class="text-[9px] text-slate-400">${s.responsible || ''} ${s.deadline ? '· ' + s.deadline : ''}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            const doneCount = plan.steps.filter(s => s.done).length;
+            const pct = plan.steps.length > 0 ? Math.round((doneCount / plan.steps.length) * 100) : 0;
+            document.getElementById('detail-progress-bar').style.width = pct + '%';
+            document.getElementById('detail-progress-pct').textContent = pct + '%';
+        }
+
+        function toggleStep(planId, stepId) {
+            const plan = actionPlans.find(p => p.id === planId);
+            if (!plan || plan.status === 'completed') return;
+            const step = plan.steps.find(s => s.id === stepId);
+            if (step) step.done = !step.done;
+            localStorage.setItem('nomos_action_plans', JSON.stringify(actionPlans));
+            renderDetailSteps(plan);
+            const allDone = plan.steps.every(s => s.done);
+            document.getElementById('btn-finalize').classList.toggle('hidden', !allDone);
+        }
+
+        function renderDetailMessages(plan) {
+            const container = document.getElementById('detail-messages');
+            container.innerHTML = plan.messages.map(m => {
+                if (m.type === 'system') {
+                    return `<div class="text-center"><span class="text-[9px] text-slate-400 bg-slate-50 dark:bg-slate-900 px-3 py-1 rounded-full">${m.text} · ${m.date}</span></div>`;
+                }
+                const isMe = m.userId === currentUser.id;
+                return `
+                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                        <div class="${isMe ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200'} px-4 py-2.5 rounded-2xl max-w-[80%]">
+                            <p class="text-[9px] font-bold ${isMe ? 'text-blue-200' : 'text-slate-400'} mb-0.5">${m.userName}</p>
+                            <p class="text-xs">${m.text}</p>
+                            <p class="text-[8px] ${isMe ? 'text-blue-300' : 'text-slate-400'} mt-1">${m.date}</p>
+                        </div>
+                    </div>`;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if (!text || !activePlanId) return;
+
+            const plan = actionPlans.find(p => p.id === activePlanId);
+            if (!plan) return;
+
+            plan.messages.push({
+                id: Date.now().toString(),
+                type: 'user',
+                userId: currentUser.id,
+                userName: currentUser.name,
+                text,
+                date: new Date().toLocaleString('pt-BR')
+            });
+
+            localStorage.setItem('nomos_action_plans', JSON.stringify(actionPlans));
+            input.value = '';
+            renderDetailMessages(plan);
+        }
+
+        function finalizePlan() {
+            if (!activePlanId) return;
+            if (!confirm('Deseja finalizar este plano de ação?')) return;
+            const plan = actionPlans.find(p => p.id === activePlanId);
+            if (!plan) return;
+            plan.status = 'completed';
+            plan.completedAt = new Date().toLocaleDateString('pt-BR');
+            plan.messages.push({
+                id: Date.now().toString(), type: 'system',
+                text: 'Plano finalizado por ' + currentUser.name,
+                date: new Date().toLocaleString('pt-BR')
+            });
+            localStorage.setItem('nomos_action_plans', JSON.stringify(actionPlans));
+            closePlanDetail();
+            renderActivePlans();
+            renderCompletedPlans();
+            showToast('Plano de ação concluído!');
+        }
+
+        function closePlanDetail() {
+            activePlanId = null;
+            document.getElementById('plan-detail').classList.add('hidden');
+            document.getElementById('plans-list').classList.remove('hidden');
+        }
+
+        // ====================== PLAN LISTS ======================
+        function renderActivePlans() {
+            const active = actionPlans.filter(p => p.status === 'active');
+            renderPlanTable('active', active);
+        }
+
+        function renderCompletedPlans() {
+            const completed = actionPlans.filter(p => p.status === 'completed');
+            renderPlanTable('completed', completed);
+        }
+
+        function renderPlanTable(type, plans) {
+            const tbody = document.getElementById(type + '-tbody');
+            const empty = document.getElementById(type + '-empty');
+            if (plans.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+            tbody.innerHTML = plans.map(p => {
+                const doneCount = p.steps.filter(s => s.done).length;
+                const total = p.steps.length;
+                const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+                return `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                    <td class="px-8 py-5 text-xs text-slate-500">${p.createdAt}</td>
+                    <td class="px-8 py-5">
+                        <p class="font-bold text-sm text-slate-900 dark:text-white">${p.testName || 'Manual'}</p>
+                        <p class="text-[10px] text-slate-400">${p.area || ''}</p>
+                    </td>
+                    <td class="px-8 py-5 text-xs text-slate-500 max-w-[200px] truncate">${p.description}</td>
+                    <td class="px-8 py-5">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-2 overflow-hidden w-24">
+                                <div class="bg-primary h-2 rounded-full" style="width:${pct}%"></div>
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-400">${doneCount}/${total}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-5 text-right">
+                        <button onclick="openPlanDetail('${p.id}')" class="text-primary text-xs font-bold hover:underline">Abrir</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // ====================== TOAST ======================
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            t.classList.remove('opacity-0', 'translate-y-4');
+            t.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => { t.classList.add('opacity-0', 'translate-y-4'); t.classList.remove('opacity-100', 'translate-y-0'); }, 3000);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
