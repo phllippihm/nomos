@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Nomos Executive Overview</title>
+
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap"
         rel="stylesheet" />
@@ -89,6 +90,10 @@
                     <div class="h-8 w-[1px] bg-slate-200 dark:bg-slate-800"></div>
                     <button class="p-2 text-slate-400 hover:text-primary transition-colors">
                         <span class="material-symbols-outlined">notifications</span>
+                    </button>
+                    <button id="logout-button" class="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                        title="Sair">
+                        <span class="material-symbols-outlined">logout</span>
                     </button>
                 </div>
             </header>
@@ -320,6 +325,26 @@
 
 
 
+    <script>
+        document.getElementById('logout-button').addEventListener('click', async () => {
+            if (confirm('Deseja realmente sair?')) {
+                try {
+                    const response = await fetch('/api/auth/logout', {
+                        method: 'POST'
+                    });
+                    if (response.ok) {
+                        localStorage.removeItem('token');
+                        window.location.replace('/login');
+                    } else {
+                        alert('Erro ao sair. Tente novamente.');
+                    }
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    alert('Erro de conexão ao sair.');
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>
