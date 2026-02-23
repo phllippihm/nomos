@@ -1,6 +1,6 @@
 package br.com.nomos.services;
 
-import br.com.nomos.repositories.UserRepository;
+import br.com.nomos.repository.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

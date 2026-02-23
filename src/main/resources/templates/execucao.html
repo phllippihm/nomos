@@ -1,41 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-
-<head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Execução de Testes - Nomos</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "#1e40af", secondary: "#3b82f6",
-                        "background-light": "#f8fafc", "background-dark": "#0f172a",
-                        "surface-light": "#ffffff", "surface-dark": "#1e293b",
-                        "sidebar-light": "#ffffff", "sidebar-dark": "#111827",
-                    },
-                    fontFamily: { display: ["Inter", "sans-serif"], body: ["Inter", "sans-serif"] },
-                    borderRadius: { DEFAULT: "0.5rem", xl: "1rem", '2xl': "1.5rem" },
-                },
-            },
-        };
-    </script>
-    <style type="text/tailwindcss">
-        body { font-family: 'Inter', sans-serif; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-    </style>
-</head>
+<head th:replace="~{fragments/head :: head('Execução de Testes - Nomos')}"></head>
 
 <body
     class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 antialiased transition-colors duration-200">
@@ -87,7 +50,8 @@
                         <span class="material-symbols-outlined text-6xl text-slate-200 mb-4">science</span>
                         <p class="text-slate-400 font-bold text-sm">Nenhum teste selecionado para execução.</p>
                         <p class="text-slate-300 text-xs mt-2">Navegue até <strong>Planejamento</strong> e clique em
-                            <strong>Executar</strong> para iniciar.</p>
+                            <strong>Executar</strong> para iniciar.
+                        </p>
                     </div>
 
                     <!-- Test selected - form -->
@@ -117,7 +81,7 @@
                                     class="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-200/60 dark:border-slate-700 shadow-sm space-y-6">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div class="space-y-1">
-                                            <label
+                                            <label for="exec-amostras"
                                                 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Amostras
                                                 Totais Testadas</label>
                                             <input type="number" id="exec-amostras" oninput="calculateCompliance()"
@@ -125,7 +89,7 @@
                                                 class="w-full p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-extrabold text-2xl text-center text-primary" />
                                         </div>
                                         <div class="space-y-1">
-                                            <label
+                                            <label for="exec-inconformes"
                                                 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Inconformidades
                                                 Detectadas</label>
                                             <input type="number" id="exec-inconformes" oninput="calculateCompliance()"
@@ -134,7 +98,7 @@
                                         </div>
                                     </div>
                                     <div class="space-y-1">
-                                        <label
+                                        <label for="exec-detalhamento"
                                             class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detalhamento
                                             das Inconformidades</label>
                                         <textarea id="exec-detalhamento"
@@ -142,15 +106,17 @@
                                             placeholder="Descreva em detalhes as inconformidades encontradas..."></textarea>
                                     </div>
                                     <div class="space-y-1">
-                                        <label
+                                        <label for="exec-file" id="label-exec-file"
                                             class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Anexos
                                             / Evidências</label>
                                         <div class="flex gap-3">
                                             <input type="file" id="exec-file" multiple class="hidden"
-                                                onchange="handleFileSelect()" />
+                                                onchange="handleFileSelect()" aria-labelledby="label-exec-file" />
                                             <button onclick="document.getElementById('exec-file').click()"
+                                                aria-label="Anexar arquivos de evidência"
                                                 class="flex items-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-500 hover:text-primary hover:border-blue-200 transition-all">
-                                                <span class="material-symbols-outlined text-lg">attach_file</span>
+                                                <span class="material-symbols-outlined text-lg"
+                                                    aria-hidden="true">attach_file</span>
                                                 Adicionar Arquivo
                                             </button>
                                         </div>
@@ -227,259 +193,8 @@
         <span id="toast-msg">Salvo!</span>
     </div>
 
-    <script>
-        const currentUser = JSON.parse(localStorage.getItem('nomos_current_session') || JSON.stringify({
-            id: 'master-0', name: 'Master Root', email: 'root@nomos.lab', role: 'Master', position: 'Admin Global', empresaId: ''
-        }));
-
-        let matrixConfig = null;
-        let testToExecute = null;
-        let attachments = [];
-        let history = [];
-
-        function init() {
-            if (!currentUser.empresaId) {
-                const empresas = JSON.parse(localStorage.getItem('nomos_empresas') || '[]');
-                if (empresas.length > 0) currentUser.empresaId = empresas[0].id;
-            }
-
-            // Load matrix config
-            const mc = localStorage.getItem('nomos_matrix_config_' + currentUser.empresaId);
-            if (mc) matrixConfig = JSON.parse(mc);
-
-            // Load history
-            const allHistory = JSON.parse(localStorage.getItem('nomos_execution_history') || '[]');
-            history = allHistory.filter(h => h.empresaId === currentUser.empresaId);
-
-            // Check if incoming test from Planejamento
-            const incoming = localStorage.getItem('nomos_test_to_execute');
-            if (incoming) {
-                testToExecute = JSON.parse(incoming);
-                localStorage.removeItem('nomos_test_to_execute');
-                showTestForm();
-            }
-
-            renderHistory();
-        }
-
-        function showTestForm() {
-            if (!testToExecute) return;
-            document.getElementById('no-test-selected').classList.add('hidden');
-            document.getElementById('test-form-area').classList.remove('hidden');
-            document.getElementById('exec-test-name').textContent = testToExecute.testName;
-            document.getElementById('exec-test-meta').textContent = `${testToExecute.area || ''} · ${testToExecute.mes} ${testToExecute.ano} · ${testToExecute.diretoria || ''}`;
-            const badge = document.getElementById('exec-risk-badge');
-            badge.textContent = testToExecute.riskLevel || 'N/A';
-        }
-
-        // ====================== COMPLIANCE CALCULATION ======================
-        function calculateCompliance() {
-            const amostras = parseInt(document.getElementById('exec-amostras').value) || 0;
-            const inconformes = parseInt(document.getElementById('exec-inconformes').value) || 0;
-
-            if (amostras <= 0) {
-                updateComplianceUI(null);
-                return;
-            }
-
-            const compliance = Math.round(((amostras - inconformes) / amostras) * 10000) / 100;
-            updateComplianceUI(Math.max(0, Math.min(100, compliance)));
-        }
-
-        function updateComplianceUI(compliance) {
-            const pctEl = document.getElementById('compliance-pct');
-            const levelEl = document.getElementById('compliance-level');
-            const actionEl = document.getElementById('maintenance-action');
-            const gauge = document.getElementById('compliance-gauge');
-
-            if (compliance === null) {
-                pctEl.textContent = '-';
-                levelEl.textContent = '-';
-                actionEl.textContent = '-';
-                gauge.style.borderColor = '#e2e8f0';
-                return;
-            }
-
-            pctEl.textContent = compliance.toFixed(1) + '%';
-
-            // Find compliance level from matrix
-            let complianceLevel = null;
-            if (matrixConfig && matrixConfig.complianceRanges) {
-                complianceLevel = matrixConfig.complianceRanges.find(r => compliance >= r.min && compliance <= r.max);
-            }
-
-            const levelLabel = complianceLevel ? complianceLevel.label : 'Nível Indefinido';
-            const levelColor = complianceLevel ? complianceLevel.color : '#94a3b8';
-            levelEl.textContent = levelLabel;
-            levelEl.style.color = levelColor;
-            gauge.style.borderColor = levelColor;
-
-            // Find maintenance action
-            if (matrixConfig && matrixConfig.maintenanceMatrix && testToExecute) {
-                const riskLevel = testToExecute.riskLevel || '';
-                const key = riskLevel + '-' + levelLabel;
-                const action = matrixConfig.maintenanceMatrix[key];
-                actionEl.textContent = action || 'Ação não definida';
-                actionEl.style.color = action === 'Nenhuma' ? '#22c55e' :
-                    action === 'Preventiva' ? '#3b82f6' :
-                        action === 'Corretiva' ? '#f59e0b' :
-                            action === 'Emergencial' ? '#ef4444' : '#94a3b8';
-            } else {
-                actionEl.textContent = 'Config. de Matrizes ausente';
-            }
-        }
-
-        // ====================== FILE HANDLING ======================
-        function handleFileSelect() {
-            const fi = document.getElementById('exec-file');
-            for (let f of fi.files) {
-                if (!attachments.includes(f.name)) attachments.push(f.name);
-            }
-            renderFileList();
-        }
-
-        function renderFileList() {
-            document.getElementById('file-list').innerHTML = attachments.map(name => `
-                <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg">
-                    <span class="material-symbols-outlined text-sm text-slate-400">description</span>
-                    ${name}
-                    <button onclick="removeAttachment('${name}')" class="ml-auto text-slate-300 hover:text-red-500"><span class="material-symbols-outlined text-sm">close</span></button>
-                </div>
-            `).join('');
-        }
-
-        function removeAttachment(name) {
-            attachments = attachments.filter(a => a !== name);
-            renderFileList();
-        }
-
-        // ====================== CONCLUDE ======================
-        function concludeExecution() {
-            if (!testToExecute) return;
-            const amostras = parseInt(document.getElementById('exec-amostras').value) || 0;
-            const inconformes = parseInt(document.getElementById('exec-inconformes').value) || 0;
-            if (amostras <= 0) { alert('Informe a quantidade de amostras.'); return; }
-
-            const compliance = Math.round(((amostras - inconformes) / amostras) * 10000) / 100;
-
-            let complianceLevel = '';
-            let maintenanceAction = '';
-            if (matrixConfig && matrixConfig.complianceRanges) {
-                const range = matrixConfig.complianceRanges.find(r => compliance >= r.min && compliance <= r.max);
-                complianceLevel = range ? range.label : '';
-                if (matrixConfig.maintenanceMatrix && testToExecute.riskLevel) {
-                    maintenanceAction = matrixConfig.maintenanceMatrix[testToExecute.riskLevel + '-' + complianceLevel] || '';
-                }
-            }
-
-            const record = {
-                id: Date.now().toString(),
-                planningId: testToExecute.id,
-                scopeId: testToExecute.scopeId,
-                empresaId: currentUser.empresaId,
-                testName: testToExecute.testName,
-                area: testToExecute.area,
-                diretoria: testToExecute.diretoria,
-                riskLevel: testToExecute.riskLevel,
-                mes: testToExecute.mes,
-                ano: testToExecute.ano,
-                date: new Date().toLocaleDateString('pt-BR'),
-                amostras, inconformes,
-                compliance: Math.max(0, Math.min(100, compliance)),
-                complianceLevel,
-                maintenanceAction,
-                detalhamento: document.getElementById('exec-detalhamento').value,
-                anexos: [...attachments],
-                executedBy: currentUser.name
-            };
-
-            // Save execution
-            const allHistory = JSON.parse(localStorage.getItem('nomos_execution_history') || '[]');
-            allHistory.push(record);
-            localStorage.setItem('nomos_execution_history', JSON.stringify(allHistory));
-
-            // Update planning status
-            const allPlans = JSON.parse(localStorage.getItem('nomos_planning') || '[]');
-            const updatedPlans = allPlans.map(p => p.id === testToExecute.id ? { ...p, status: 'Realizado' } : p);
-            localStorage.setItem('nomos_planning', JSON.stringify(updatedPlans));
-
-            // Reset
-            testToExecute = null;
-            attachments = [];
-            document.getElementById('test-form-area').classList.add('hidden');
-            document.getElementById('no-test-selected').classList.remove('hidden');
-            history = allHistory.filter(h => h.empresaId === currentUser.empresaId);
-            renderHistory();
-            switchTab('history');
-            showToast('Execução concluída com sucesso!');
-        }
-
-        // ====================== HISTORY ======================
-        function renderHistory() {
-            const tbody = document.getElementById('history-tbody');
-            const empty = document.getElementById('history-empty');
-            if (history.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
-            empty.classList.add('hidden');
-
-            const actionPlans = JSON.parse(localStorage.getItem('nomos_action_plans') || '[]');
-
-            tbody.innerHTML = history.sort((a, b) => b.id.localeCompare(a.id)).map(h => {
-                const compColor = h.compliance >= 90 ? 'text-emerald-600' : h.compliance >= 70 ? 'text-amber-500' : 'text-red-500';
-                const existingPlan = actionPlans.find(ap => ap.executionId === h.id);
-                return `
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                    <td class="px-8 py-5 text-xs font-medium text-slate-500">${h.date}</td>
-                    <td class="px-8 py-5">
-                        <p class="font-bold text-sm text-slate-900 dark:text-white">${h.testName}</p>
-                        <p class="text-[10px] text-slate-400 uppercase font-bold">${h.area || ''}</p>
-                    </td>
-                    <td class="px-8 py-5 text-xs text-slate-500">${h.amostras} / ${h.inconformes} NC</td>
-                    <td class="px-8 py-5 font-extrabold text-sm ${compColor}">${h.compliance.toFixed(1)}%</td>
-                    <td class="px-8 py-5 text-xs font-bold ${h.maintenanceAction === 'Emergencial' ? 'text-red-500' : h.maintenanceAction === 'Corretiva' ? 'text-amber-500' : h.maintenanceAction === 'Preventiva' ? 'text-blue-500' : 'text-emerald-500'}">${h.maintenanceAction || '-'}</td>
-                    <td class="px-6 py-5 text-right space-x-2">
-                        ${existingPlan
-                        ? `<button onclick="goViewPlan('${existingPlan.id}')" class="text-primary text-[10px] font-bold hover:underline">Ver Plano</button>`
-                        : `<button onclick="goCreatePlan('${h.id}')" class="bg-amber-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-all">Criar Plano</button>`
-                    }
-                    </td>
-                </tr>`;
-            }).join('');
-        }
-
-        function goCreatePlan(execId) {
-            const exec = history.find(h => h.id === execId);
-            if (!exec) return;
-            localStorage.setItem('nomos_execution_for_plan', JSON.stringify(exec));
-            window.location.href = '/planos-acao';
-        }
-
-        function goViewPlan(planId) {
-            window.location.href = '/planos-acao?planId=' + planId;
-        }
-
-        // ====================== TABS ======================
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(b => {
-                b.classList.remove('border-primary', 'text-primary');
-                b.classList.add('border-transparent', 'text-slate-400');
-            });
-            document.getElementById('panel-' + tab).classList.remove('hidden');
-            const btn = document.getElementById('tab-' + tab);
-            btn.classList.add('border-primary', 'text-primary');
-            btn.classList.remove('border-transparent', 'text-slate-400');
-        }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            document.getElementById('toast-msg').textContent = msg;
-            t.classList.remove('opacity-0', 'translate-y-4');
-            t.classList.add('opacity-100', 'translate-y-0');
-            setTimeout(() => { t.classList.add('opacity-0', 'translate-y-4'); t.classList.remove('opacity-100', 'translate-y-0'); }, 3000);
-        }
-
-        init();
-    </script>
+    <!-- Scripts -->
+    <script src="/js/execucao.js"></script>
 </body>
 
 </html>

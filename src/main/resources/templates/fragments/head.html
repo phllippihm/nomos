@@ -1,0 +1,17 @@
+<!-- Thymeleaf Head Fragment: Shared <head> content for all app pages -->
+
+<head th:fragment="head(pageTitle)">
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title th:text="${pageTitle}">Nomos</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script th:src="@{/js/tailwind-config.js}"></script>
+    <script th:src="@{/js/nomos-sidebar.js}" defer></script>
+    <script th:src="@{/js/nomos-common.js}" defer></script>
+    <link th:href="@{/css/nomos-base.css}" rel="stylesheet" />
+</head>

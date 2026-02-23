@@ -1,4 +1,4 @@
-package br.com.nomos.repositories;
+package br.com.nomos.repository.user;
 
 import br.com.nomos.domain.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;

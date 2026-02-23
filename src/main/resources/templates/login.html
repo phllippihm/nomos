@@ -1,61 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Nomos - Login Profissional</title>
-    <link href="https://fonts.googleapis.com" rel="preconnect" />
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#1978e5",
-                        "primary-dark": "#0f5bbd",
-                        "secondary": "#0e141b",
-                        "accent": "#f0f4f8",
-                        "background-light": "#f6f7f8",
-                        "background-dark": "#111821",
-                        "text-main": "#0e141b",
-                        "text-muted": "#4e7097",
-                    },
-                    fontFamily: {
-                        "display": ["Inter", "sans-serif"],
-                        "body": ["Inter", "sans-serif"],
-                    },
-                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
-                    boxShadow: {
-                        "soft": "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)",
-                        "card": "0 0 0 1px rgba(226, 232, 240, 1), 0 4px 6px rgba(0, 0, 0, 0.05)",
-                        "card-hover": "0 0 0 1px rgba(25, 120, 229, 0.3), 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                    }
-                },
-            },
-        }
-    </script>
-    <style type="text/tailwindcss">
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        .hero-pattern {
-            background-image: radial-gradient(#1978e5 0.5px, transparent 0.5px), radial-gradient(#1978e5 0.5px, #f6f7f8 0.5px);
-            background-size: 24px 24px;
-            background-position: 0 0, 12px 12px;
-            opacity: 0.08;
-        }
-    </style>
-</head>
+<head th:replace="~{fragments/head :: head('Nomos - Login Profissional')}"></head>
 
 <body
     class="bg-background-light dark:bg-background-dark text-text-main flex flex-col min-h-screen selection:bg-primary/20 selection:text-primary relative overflow-hidden">
@@ -135,50 +78,8 @@
         </div>
     </footer>
 
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const email = document.getElementById('email').value;
-            const senha = document.getElementById('password').value;
-            const submitBtn = document.getElementById('submitBtn');
-            const errorMsg = document.getElementById('error-message');
-
-            // Custom UI states
-            submitBtn.innerHTML = 'Conectando...';
-            submitBtn.disabled = true;
-            errorMsg.classList.add('hidden');
-
-            try {
-                const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email: email, senha: senha })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    // O token JWT agora é enviado via Cookie HttpOnly pelo backend (Segurança @security-auditor)
-                    // Armazenamos no localStorage apenas se necessário para interações puramente client-side
-                    localStorage.setItem('token', data.token);
-
-                    window.location.href = '/home'; // Redireciona
-                } else {
-                    errorMsg.classList.remove('hidden');
-                    submitBtn.innerHTML = 'Acessar Sistema';
-                    submitBtn.disabled = false;
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                errorMsg.classList.remove('hidden');
-                errorMsg.innerText = 'Erro ao conectar. Tente novamente.';
-                submitBtn.innerHTML = 'Acessar Sistema';
-                submitBtn.disabled = false;
-            }
-        });
-    </script>
+    <!-- Scripts -->
+    <script src="/js/login.js"></script>
 </body>
 
 </html>

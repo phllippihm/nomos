@@ -1,6 +1,6 @@
 package br.com.nomos.infra.security;
 
-import br.com.nomos.repositories.UserRepository;
+import br.com.nomos.repository.user.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;

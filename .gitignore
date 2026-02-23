@@ -36,3 +36,11 @@ build/
 stich/
 src/main/resources/db/
 .agent/
+
+### Temporary & Data Files ###
+*.xlsx
+*.xls
+manual_content.txt
+manual_preview.txt
+sheet_*.md
+*.log

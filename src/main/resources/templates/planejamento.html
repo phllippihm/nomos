@@ -1,45 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-
-<head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Planejamento e Ciclos - Nomos</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "#1e40af", secondary: "#3b82f6",
-                        "background-light": "#f8fafc", "background-dark": "#0f172a",
-                        "surface-light": "#ffffff", "surface-dark": "#1e293b",
-                        "sidebar-light": "#ffffff", "sidebar-dark": "#111827",
-                    },
-                    fontFamily: { display: ["Inter", "sans-serif"], body: ["Inter", "sans-serif"] },
-                    borderRadius: { DEFAULT: "0.5rem", xl: "1rem", '2xl': "1.5rem" },
-                },
-            },
-        };
-    </script>
-    <style type="text/tailwindcss">
-        body { font-family: 'Inter', sans-serif; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
-        .animate-row { animation: fadeIn 0.3s ease-out forwards; opacity:0; }
-        @keyframes pulseGlow { 0%,100%{box-shadow: 0 0 0 0 rgba(239,68,68,0.2);} 50%{box-shadow: 0 0 12px 4px rgba(239,68,68,0.15);} }
-        .pulse-overdue { animation: pulseGlow 2s infinite; }
-    </style>
-</head>
+<head th:replace="~{fragments/head :: head('Planejamento e Ciclos - Nomos')}"></head>
 
 <body
     class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 antialiased transition-colors duration-200">
@@ -86,7 +45,8 @@
                     class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200/60 dark:border-slate-700 shadow-sm">
                     <div class="flex flex-wrap gap-4 items-end">
                         <div class="flex-1 min-w-[200px] space-y-1">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Busca
+                            <label for="filter-search"
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Busca
                                 Rápida</label>
                             <div class="relative">
                                 <span
@@ -97,20 +57,22 @@
                             </div>
                         </div>
                         <div class="w-28 space-y-1">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ano</label>
+                            <label for="filter-year"
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ano</label>
                             <select id="filter-year" onchange="renderPlanning()"
                                 class="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold outline-none">
                             </select>
                         </div>
                         <div class="w-36 space-y-1">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mês</label>
+                            <label for="filter-month"
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mês</label>
                             <select id="filter-month" onchange="renderPlanning()"
                                 class="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none">
                                 <option value="">Todos</option>
                             </select>
                         </div>
                         <div class="w-40 space-y-1">
-                            <label
+                            <label for="filter-diretoria"
                                 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Diretoria</label>
                             <select id="filter-diretoria" onchange="renderPlanning()"
                                 class="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none">
@@ -118,14 +80,15 @@
                             </select>
                         </div>
                         <div class="w-40 space-y-1">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Área</label>
+                            <label for="filter-area"
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Área</label>
                             <select id="filter-area" onchange="renderPlanning()"
                                 class="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none">
                                 <option value="">Todas</option>
                             </select>
                         </div>
                         <div class="w-32 space-y-1">
-                            <label
+                            <label for="filter-status"
                                 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</label>
                             <select id="filter-status" onchange="renderPlanning()"
                                 class="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none">
@@ -247,238 +210,8 @@
         <span id="toast-msg">Redirecionando...</span>
     </div>
 
-    <script>
-        const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-
-        const currentUser = JSON.parse(localStorage.getItem('nomos_current_session') || JSON.stringify({
-            id: 'master-0', name: 'Master Root', email: 'root@nomos.lab', role: 'Master', position: 'Admin Global', empresaId: ''
-        }));
-
-        let plans = [];
-        let allPlans = [];
-        let executions = [];
-
-        function init() {
-            if (!currentUser.empresaId) {
-                const empresas = JSON.parse(localStorage.getItem('nomos_empresas') || '[]');
-                if (empresas.length > 0) currentUser.empresaId = empresas[0].id;
-            }
-
-            allPlans = JSON.parse(localStorage.getItem('nomos_planning') || '[]');
-            plans = allPlans.filter(p => p.empresaId === currentUser.empresaId);
-            executions = JSON.parse(localStorage.getItem('nomos_execution_history') || '[]')
-                .filter(e => e.empresaId === currentUser.empresaId);
-
-            // ===== OVERDUE CALCULATION =====
-            // Compare each plan's month/year against current date.
-            // If the month has passed and the status is still Pendente, mark as Vencido.
-            const now = new Date();
-            const currentMonth = now.getMonth(); // 0-indexed
-            const currentYear = now.getFullYear();
-            let overdueUpdated = false;
-
-            plans.forEach(p => {
-                if (p.status === 'Pendente') {
-                    const planMonthIdx = MESES.indexOf(p.mes);
-                    const planYear = parseInt(p.ano);
-                    if (planYear < currentYear || (planYear === currentYear && planMonthIdx < currentMonth)) {
-                        p.status = 'Vencido';
-                        overdueUpdated = true;
-                    }
-                }
-            });
-
-            // Persist overdue changes back to the global array
-            if (overdueUpdated) {
-                const updatedAll = allPlans.map(ap => {
-                    const match = plans.find(p => p.id === ap.id);
-                    return match || ap;
-                });
-                localStorage.setItem('nomos_planning', JSON.stringify(updatedAll));
-            }
-
-            populateFilters();
-            renderPlanning();
-        }
-
-        function populateFilters() {
-            // Year filter (reverse chronological, current year selected)
-            const yearsSet = new Set();
-            const curY = new Date().getFullYear().toString();
-            yearsSet.add(curY);
-            plans.forEach(p => yearsSet.add(p.ano));
-            const years = Array.from(yearsSet).sort().reverse();
-            document.getElementById('filter-year').innerHTML =
-                years.map(y => `<option value="${y}" ${y === curY ? 'selected' : ''}>${y}</option>`).join('');
-
-            // Month filter
-            document.getElementById('filter-month').innerHTML =
-                '<option value="">Todos</option>' +
-                MESES.map(m => `<option value="${m}">${m}</option>`).join('');
-
-            // Diretoria filter (dynamic from data)
-            const diretorias = [...new Set(plans.map(p => p.diretoria).filter(Boolean))].sort();
-            document.getElementById('filter-diretoria').innerHTML =
-                '<option value="">Todas</option>' +
-                diretorias.map(d => `<option value="${d}">${d}</option>`).join('');
-
-            // Area filter (dynamic from data)
-            const areas = [...new Set(plans.map(p => p.area).filter(Boolean))].sort();
-            document.getElementById('filter-area').innerHTML =
-                '<option value="">Todas</option>' +
-                areas.map(a => `<option value="${a}">${a}</option>`).join('');
-        }
-
-        function renderPlanning() {
-            const search = document.getElementById('filter-search').value.toLowerCase();
-            const year = document.getElementById('filter-year').value;
-            const month = document.getElementById('filter-month').value;
-            const diretoria = document.getElementById('filter-diretoria').value;
-            const area = document.getElementById('filter-area').value;
-            const status = document.getElementById('filter-status').value;
-
-            let filtered = plans.filter(p => {
-                if (year && p.ano !== year) return false;
-                if (month && p.mes !== month) return false;
-                if (diretoria && p.diretoria !== diretoria) return false;
-                if (area && p.area !== area) return false;
-                if (status && p.status !== status) return false;
-                if (search && !(p.testName.toLowerCase().includes(search) || (p.area || '').toLowerCase().includes(search))) return false;
-                return true;
-            });
-
-            // Sort by month index (chronological)
-            filtered.sort((a, b) => MESES.indexOf(a.mes) - MESES.indexOf(b.mes));
-
-            // ===== STATS =====
-            const total = filtered.length;
-            const done = filtered.filter(p => p.status === 'Realizado').length;
-            const pending = filtered.filter(p => p.status === 'Pendente').length;
-            const overdue = filtered.filter(p => p.status === 'Vencido').length;
-
-            document.getElementById('stat-total').textContent = total;
-            document.getElementById('stat-done').textContent = done;
-            document.getElementById('stat-pending').textContent = pending;
-            document.getElementById('stat-overdue').textContent = overdue;
-
-            // Overdue card pulsing
-            const overdueCard = document.getElementById('stat-overdue-card');
-            if (overdue > 0) {
-                overdueCard.classList.add('pulse-overdue', 'border-red-200');
-            } else {
-                overdueCard.classList.remove('pulse-overdue', 'border-red-200');
-            }
-
-            // ===== PROGRESS BAR =====
-            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-            document.getElementById('progress-bar').style.width = pct + '%';
-            document.getElementById('progress-pct').textContent = pct + '%';
-            document.getElementById('progress-label-done').textContent = done + ' realizados';
-            document.getElementById('progress-label-total').textContent = 'de ' + total + ' planejados';
-
-            // ===== TABLE =====
-            const tbody = document.getElementById('planning-tbody');
-            const empty = document.getElementById('planning-empty');
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = '';
-                empty.classList.remove('hidden');
-                return;
-            }
-            empty.classList.add('hidden');
-
-            tbody.innerHTML = filtered.map((p, idx) => {
-                // Status styling
-                const statusClass =
-                    p.status === 'Realizado' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                        p.status === 'Vencido' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                            'bg-slate-100 text-slate-500 dark:bg-slate-700/40 dark:text-slate-400';
-
-                const statusIcon =
-                    p.status === 'Realizado' ? 'check_circle' :
-                        p.status === 'Vencido' ? 'error' : 'schedule';
-
-                // Risk badge color
-                const riskColor =
-                    (p.riskLevel || '').toLowerCase().includes('alto') ? 'text-red-600 bg-red-50 border-red-100' :
-                        (p.riskLevel || '').toLowerCase().includes('médio') ? 'text-amber-600 bg-amber-50 border-amber-100' :
-                            (p.riskLevel || '').toLowerCase().includes('baixo') ? 'text-emerald-600 bg-emerald-50 border-emerald-100' :
-                                (p.riskLevel || '').toLowerCase().includes('crític') ? 'text-purple-600 bg-purple-50 border-purple-100' :
-                                    'text-slate-500 bg-slate-50 border-slate-200';
-
-                // Get execution data for realized tests
-                const exec = executions.find(e => e.planningId === p.id);
-                const complianceText = exec ? (exec.compliance || exec.percentConformidade || 0).toFixed(1) + '%' : '';
-
-                // Row border-left accent
-                const rowAccent =
-                    p.status === 'Vencido' ? 'border-l-4 border-l-red-400' :
-                        p.status === 'Realizado' ? 'border-l-4 border-l-emerald-400' :
-                            'border-l-4 border-l-transparent';
-
-                // Executar button only for non-realized
-                const canExecute = p.status !== 'Realizado';
-
-                return `
-                <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-700/20 transition-colors ${rowAccent} animate-row" style="animation-delay:${idx * 30}ms">
-                    <td class="px-8 py-5">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl ${p.status === 'Vencido' ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20'} flex items-center justify-center">
-                                <span class="material-symbols-outlined ${p.status === 'Vencido' ? 'text-red-400' : 'text-primary'} text-lg">calendar_month</span>
-                            </div>
-                            <div>
-                                <p class="font-black text-slate-900 dark:text-white text-sm leading-none">${p.mes}</p>
-                                <p class="text-[10px] font-bold text-slate-400 mt-1">${p.ano}</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-8 py-5">
-                        <p class="font-bold text-sm text-slate-900 dark:text-white">${p.testName}</p>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-0.5 tracking-widest">${p.area || ''} ${p.diretoria ? '· ' + p.diretoria : ''}</p>
-                    </td>
-                    <td class="px-6 py-5">
-                        ${p.riskLevel ? `<span class="text-[9px] font-black uppercase px-2.5 py-1 rounded-full border ${riskColor}">${p.riskLevel}</span>` : '<span class="text-slate-300 text-xs">-</span>'}
-                    </td>
-                    <td class="px-6 py-5">
-                        <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">${p.responsavel || '-'}</span>
-                    </td>
-                    <td class="px-6 py-5">
-                        <div class="flex flex-col space-y-1.5">
-                            <span class="flex items-center gap-1.5 text-[9px] w-fit font-black uppercase px-2.5 py-1 rounded-full ${statusClass}">
-                                <span class="material-symbols-outlined text-[13px]">${statusIcon}</span>
-                                ${p.status}
-                            </span>
-                            ${complianceText ? `<span class="text-[10px] font-bold text-emerald-600">Conformidade: ${complianceText}</span>` : ''}
-                        </div>
-                    </td>
-                    <td class="px-8 py-5 text-right">
-                        ${canExecute
-                        ? `<button onclick="goExecute('${p.id}')" class="px-5 py-2.5 bg-primary text-white text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-500/10 active:scale-95 transition-all">Executar</button>`
-                        : `<span class="flex items-center gap-1 justify-end text-emerald-500 text-[10px] font-black uppercase"><span class="material-symbols-outlined text-sm">verified</span> Concluído</span>`
-                    }
-                    </td>
-                </tr>`;
-            }).join('');
-        }
-
-        function goExecute(planId) {
-            const plan = plans.find(p => p.id === planId);
-            if (!plan) return;
-            localStorage.setItem('nomos_test_to_execute', JSON.stringify(plan));
-            showToast('Carregando teste para execução...');
-            setTimeout(() => { window.location.href = '/execucao'; }, 400);
-        }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            document.getElementById('toast-msg').textContent = msg;
-            t.classList.remove('opacity-0', 'translate-y-4');
-            t.classList.add('opacity-100', 'translate-y-0');
-            setTimeout(() => { t.classList.add('opacity-0', 'translate-y-4'); t.classList.remove('opacity-100', 'translate-y-0'); }, 2000);
-        }
-
-        init();
-    </script>
+    <!-- Scripts -->
+    <script src="/js/planejamento.js"></script>
 </body>
 
 </html>

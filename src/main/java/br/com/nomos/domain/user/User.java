@@ -1,12 +1,16 @@
 package br.com.nomos.domain.user;
 
+import br.com.nomos.domain.organization.Institution;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -47,19 +51,20 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
-    @Column(nullable = false)
-    private String instituicao;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "institution_id", nullable = false)
+    private Institution institution;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private UserStatus status;
 
-    public User(String nome, String email, String senha, UserRole role, String instituicao, UserStatus status) {
+    public User(String nome, String email, String senha, UserRole role, Institution institution, UserStatus status) {
         this.nome = nome;
         this.email = email;
         this.senha = senha;
         this.role = role;
-        this.instituicao = instituicao;
+        this.institution = institution;
         this.status = status;
     }
 

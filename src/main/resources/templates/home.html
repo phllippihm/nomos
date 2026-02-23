@@ -1,66 +1,4 @@
-﻿<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Nomos Executive Overview</title>
-
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "#1e40af",
-                        secondary: "#3b82f6",
-                        "background-light": "#f8fafc", // Slightly lighter for more "air"
-                        "background-dark": "#0f172a",
-                        "surface-light": "#ffffff",
-                        "surface-dark": "#1e293b",
-                        "sidebar-light": "#ffffff", // Pure white sidebar for minimalist look
-                        "sidebar-dark": "#111827",
-                        "icon-pastel": "#e0e7ff", // Unified pastel base
-                    },
-                    fontFamily: {
-                        display: ["Inter", "sans-serif"],
-                        body: ["Inter", "sans-serif"],
-                    },
-                    borderRadius: {
-                        DEFAULT: "0.5rem",
-                        xl: "1rem",
-                        '2xl': "1.5rem",
-                    },
-                },
-            },
-        };
-    </script>
-    <style type="text/tailwindcss">
-        body { font-family: 'Inter', sans-serif; }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #e2e8f0;
-            border-radius: 10px;
-        }
-        .dark ::-webkit-scrollbar-thumb {
-            background: #334155;
-        }
-    </style>
-</head>
+﻿<head th:replace="~{fragments/head :: head('Executive Dashboard - Nomos')}"></head>
 
 <body
     class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 antialiased transition-colors duration-200">
@@ -88,12 +26,12 @@
                         <span class="text-[11px] font-bold uppercase tracking-wider">Simular Perfil: Master Root</span>
                     </div>
                     <div class="h-8 w-[1px] bg-slate-200 dark:bg-slate-800"></div>
-                    <button class="p-2 text-slate-400 hover:text-primary transition-colors">
-                        <span class="material-symbols-outlined">notifications</span>
+                    <button class="p-2 text-slate-400 hover:text-primary transition-colors" aria-label="Notificações">
+                        <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
                     </button>
                     <button id="logout-button" class="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                        title="Sair">
-                        <span class="material-symbols-outlined">logout</span>
+                        title="Sair" aria-label="Encerrar Sessão">
+                        <span class="material-symbols-outlined" aria-hidden="true">logout</span>
                     </button>
                 </div>
             </header>
@@ -112,6 +50,7 @@
                         Quinta-feira, 12 de Fevereiro
                     </div>
                 </div>
+                <!-- Cartões de Resumo -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <div
                         class="bg-surface-light dark:bg-surface-dark p-8 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 dark:hover:shadow-none transition-all duration-300 group">
@@ -187,32 +126,34 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
                         <h2 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
                             Atalhos Rápidos</h2>
                         <div class="flex gap-2">
-                            <button
+                            <button aria-label="Ver atalhos anteriores"
                                 class="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-primary transition-colors">
-                                <span class="material-symbols-outlined text-sm">chevron_left</span>
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">chevron_left</span>
                             </button>
-                            <button
+                            <button aria-label="Ver próximos atalhos"
                                 class="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-primary transition-colors">
-                                <span class="material-symbols-outlined text-sm">chevron_right</span>
+                                <span class="material-symbols-outlined text-sm" aria-hidden="true">chevron_right</span>
                             </button>
                         </div>
                     </div>
                     <div class="flex overflow-x-auto pb-4 gap-4 no-scrollbar">
                         <a class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group"
-                            href="#">
+                            href="/parametrizar-matrizes">
                             <div
                                 class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary dark:text-indigo-300 group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined text-xl">grid_view</span>
                             </div>
                             <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">Matrizes</span>
                         </a>
+                        <!-- outros atalhos -->
                         <a class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group"
-                            href="#">
+                            href="/escopo-testes">
                             <div
                                 class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary dark:text-indigo-300 group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined text-xl">language</span>
@@ -220,7 +161,7 @@
                             <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">Escopo</span>
                         </a>
                         <a class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group"
-                            href="#">
+                            href="/planejamento">
                             <div
                                 class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary dark:text-indigo-300 group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined text-xl">event_available</span>
@@ -229,7 +170,7 @@
                                 class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">Planejamento</span>
                         </a>
                         <a class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group"
-                            href="#">
+                            href="/execucao">
                             <div
                                 class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary dark:text-indigo-300 group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined text-xl">play_circle</span>
@@ -237,7 +178,7 @@
                             <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">Execução</span>
                         </a>
                         <a class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group"
-                            href="#">
+                            href="/dashboards">
                             <div
                                 class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary dark:text-indigo-300 group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined text-xl">monitoring</span>
@@ -255,6 +196,7 @@
                         </a>
                     </div>
                 </div>
+
                 <div
                     class="bg-surface-light dark:bg-surface-dark rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none overflow-hidden">
                     <div
@@ -304,6 +246,7 @@
                         </table>
                     </div>
                 </div>
+
                 <footer class="text-center pt-8 pb-12">
                     <p class="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-[0.3em]">
                         © 2024 Nomos Executive Platform • Todos os Direitos Reservados
@@ -312,39 +255,9 @@
             </div>
         </main>
     </div>
-    <style>
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
 
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-    </style>
-
-
-
-    <script>
-        document.getElementById('logout-button').addEventListener('click', async () => {
-            if (confirm('Deseja realmente sair?')) {
-                try {
-                    const response = await fetch('/api/auth/logout', {
-                        method: 'POST'
-                    });
-                    if (response.ok) {
-                        localStorage.removeItem('token');
-                        window.location.replace('/login');
-                    } else {
-                        alert('Erro ao sair. Tente novamente.');
-                    }
-                } catch (error) {
-                    console.error('Logout error:', error);
-                    alert('Erro de conexão ao sair.');
-                }
-            }
-        });
-    </script>
+    <!-- Scripts -->
+    <script src="/js/home.js"></script>
 </body>
 
 </html>

@@ -25,7 +25,7 @@ public class TokenService {
                     .withIssuer("nomos-api")
                     .withSubject(user.getEmail())
                     .withClaim("role", user.getRole().name())
-                    .withClaim("instituicao", user.getInstituicao())
+                    .withClaim("instituicao", user.getInstitution().getNome())
                     .withExpiresAt(genExpirationDate())
                     .sign(algorithm);
         } catch (JWTCreationException exception) {

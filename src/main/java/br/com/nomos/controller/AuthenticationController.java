@@ -1,19 +1,24 @@
 package br.com.nomos.controller;
 
+import br.com.nomos.domain.organization.Institution;
 import br.com.nomos.domain.user.AuthenticationDTO;
 import br.com.nomos.domain.user.LoginResponseDTO;
 import br.com.nomos.domain.user.RegisterDTO;
 import br.com.nomos.domain.user.User;
+import br.com.nomos.domain.user.UserResponseDTO;
 import br.com.nomos.domain.user.UserStatus;
 import br.com.nomos.infra.security.TokenService;
-import br.com.nomos.repositories.UserRepository;
+import br.com.nomos.repository.organization.InstitutionRepository;
+import br.com.nomos.repository.user.UserRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +33,9 @@ public class AuthenticationController {
 
     @Autowired
     private UserRepository repository;
+
+    @Autowired
+    private InstitutionRepository institutionRepository;
 
     @Autowired
     private TokenService tokenService;
@@ -70,11 +78,27 @@ public class AuthenticationController {
         }
 
         String encryptedPassword = passwordEncoder.encode(data.senha());
-        User newUser = new User(data.nome(), data.email(), encryptedPassword, data.role(), data.instituicao(),
+
+        // Simples lógica para MVP: buscar instituição pelo nome ou criar se não existir
+        Institution institution = institutionRepository.findAll().stream()
+                .filter(i -> i.getNome().equalsIgnoreCase(data.instituicao()))
+                .findFirst()
+                .orElseGet(() -> institutionRepository.save(new Institution(data.instituicao())));
+
+        User newUser = new User(data.nome(), data.email(), encryptedPassword, data.role(), institution,
                 UserStatus.ATIVO);
 
         this.repository.save(newUser);
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> me() {
+        var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof User user) {
+            return ResponseEntity.ok(new UserResponseDTO(user));
+        }
+        return ResponseEntity.status(401).build();
     }
 }
