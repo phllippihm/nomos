@@ -15,4 +15,6 @@ public interface ExecutionRecordRepository extends JpaRepository<ExecutionRecord
     void deleteByScopeItemId(UUID scopeItemId);
 
     java.util.Optional<ExecutionRecord> findByPlanningItemId(UUID planningItemId);
+
+    java.util.List<ExecutionRecord> findByScopeItemId(UUID scopeItemId);
 }

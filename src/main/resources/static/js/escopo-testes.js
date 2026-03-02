@@ -22,9 +22,11 @@ async function init() {
     }
 
     try {
-        matrixState = JSON.parse(localStorage.getItem('nomos_matrix_config'));
-        if (!matrixState) {
-            console.warn('[Nomos] Matriz de Risco não configurada no localStorage.');
+        try {
+            const data = await apiFetch(`/matrix-config/${currentUser.institutionId}`);
+            if (data && typeof data === 'object') matrixState = data;
+        } catch (matrixErr) {
+            console.warn('[Nomos] Não foi possível carregar configuração da matriz:', matrixErr);
         }
 
         // Load Escopos from Backend
@@ -307,12 +309,10 @@ function resetForm() {
     renderMonthsGrid();
 }
 
-/** 
+/**
  * Local calendar generation (Legacy Support)
  * Note: Will be replaced by backend logic in Phase 8.
  */
 function generatePlanningItems(scope) {
     // Legacy logic for local simulation if needed
 }
-
-init();

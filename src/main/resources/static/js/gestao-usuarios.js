@@ -3,9 +3,9 @@
  * Handles rendering tables, modals, and organizational structure.
  */
 
-let empresas = JSON.parse(localStorage.getItem('nomos_empresas') || '[]');
-let users = JSON.parse(localStorage.getItem('nomos_users') || '[]');
-let estrutura = JSON.parse(localStorage.getItem('nomos_estrutura') || '{}');
+let users = [];
+let estrutura = {};
+let institutions = []; // loaded from API
 
 /**
  * Custom Tab Switching for Gestão de Usuários
@@ -30,38 +30,40 @@ function renderEmpresas() {
     const tbody = document.getElementById('empresas-tbody');
     const empty = document.getElementById('empresas-empty');
     if (!tbody || !empty) return;
-    if (empresas.length === 0) {
+    if (institutions.length === 0) {
         tbody.innerHTML = '';
         empty.classList.remove('hidden');
         return;
     }
     empty.classList.add('hidden');
-    tbody.innerHTML = empresas.map(emp => `
+    tbody.innerHTML = institutions.map(inst => `
         <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
             <td class="px-8 py-5">
                 <div class="flex items-center gap-3">
                     <div class="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
                         <span class="material-symbols-outlined text-primary text-lg">business</span>
                     </div>
-                    <span class="font-bold text-slate-900 dark:text-white text-sm">${emp.nome}</span>
+                    <span class="font-bold text-slate-900 dark:text-white text-sm">${inst.nome}</span>
                 </div>
             </td>
-            <td class="px-8 py-5 text-slate-500 font-mono text-xs">${emp.cnpj}</td>
-            <td class="px-8 py-5 text-slate-400 text-xs">${emp.createdAt}</td>
+            <td class="px-8 py-5 text-slate-500 font-mono text-xs">${inst.cnpj || '—'}</td>
+            <td class="px-8 py-5">
+                <span class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg ${inst.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'}">${inst.ativo ? 'Ativa' : 'Inativa'}</span>
+            </td>
             <td class="px-8 py-5 text-right">
-                <button onclick="editEmpresa('${emp.id}')" class="text-primary text-xs font-bold hover:underline">Editar</button>
-                <button onclick="deleteEmpresa('${emp.id}')" class="text-red-400 text-xs font-bold hover:underline ml-3">Excluir</button>
+                <button onclick="editEmpresa('${inst.id}')" class="text-primary text-xs font-bold hover:underline">Editar</button>
+                <button onclick="deleteEmpresa('${inst.id}')" class="text-red-400 text-xs font-bold hover:underline ml-3">Excluir</button>
             </td>
         </tr>
     `).join('');
 }
 
-function openEmpresaModal(emp) {
-    document.getElementById('emp-nome').value = emp ? emp.nome : '';
-    document.getElementById('emp-cnpj').value = emp ? emp.cnpj : '';
-    document.getElementById('emp-id').value = emp ? emp.id : '';
+function openEmpresaModal(inst) {
+    document.getElementById('emp-nome').value = inst ? inst.nome : '';
+    document.getElementById('emp-cnpj').value = inst ? (inst.cnpj || '') : '';
+    document.getElementById('emp-id').value = inst ? inst.id : '';
     const titleEl = document.getElementById('modal-empresa-title');
-    if (titleEl) titleEl.textContent = emp ? 'Editar Empresa' : 'Cadastrar Empresa';
+    if (titleEl) titleEl.textContent = inst ? 'Editar Empresa' : 'Cadastrar Empresa';
     const modal = document.getElementById('modal-empresa');
     if (modal) {
         modal.style.display = 'flex';
@@ -78,54 +80,78 @@ function closeEmpresaModal() {
 }
 
 function editEmpresa(id) {
-    const emp = empresas.find(e => e.id === id);
-    if (emp) openEmpresaModal(emp);
+    const inst = institutions.find(i => i.id === id);
+    if (inst) openEmpresaModal(inst);
 }
 
-function deleteEmpresa(id) {
-    if (!confirm('Deseja realmente excluir esta empresa?')) return;
-    empresas = empresas.filter(e => e.id !== id);
-    localStorage.setItem('nomos_empresas', JSON.stringify(empresas));
-    renderEmpresas();
-    populateEmpresaSelects();
-    showToast('Empresa excluída.');
+async function deleteEmpresa(id) {
+    if (!confirm('Deseja realmente excluir esta empresa? Isso também remove toda a estrutura organizacional vinculada.')) return;
+    try {
+        await apiFetch(`/organization/institutions/${id}`, { method: 'DELETE' });
+        await loadInstitutions();
+        renderEmpresas();
+        showToast('Empresa excluída.');
+    } catch (e) {
+        showToast('Erro ao excluir empresa.');
+        console.error(e);
+    }
 }
 
-function saveEmpresa() {
+async function saveEmpresa() {
     const nome = document.getElementById('emp-nome')?.value.trim();
     const cnpj = document.getElementById('emp-cnpj')?.value.trim();
     const id = document.getElementById('emp-id')?.value;
-    if (!nome || !cnpj) { alert('Preencha Nome e CNPJ.'); return; }
+    if (!nome) { alert('Preencha o Nome da Empresa.'); return; }
 
-    if (id) {
-        empresas = empresas.map(e => e.id === id ? { ...e, nome, cnpj } : e);
-    } else {
-        empresas.push({
-            id: Date.now().toString(),
-            nome, cnpj,
-            createdAt: new Date().toLocaleDateString('pt-BR')
-        });
+    try {
+        if (id) {
+            await apiFetch(`/organization/institutions/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ id, nome, cnpj: cnpj || null, ativo: true })
+            });
+            showToast('Empresa atualizada!');
+        } else {
+            await apiFetch('/organization/institutions', {
+                method: 'POST',
+                body: JSON.stringify({ nome, cnpj: cnpj || null, ativo: true })
+            });
+            showToast('Empresa cadastrada!');
+        }
+        closeEmpresaModal();
+        await loadInstitutions();
+        renderEmpresas();
+    } catch (e) {
+        showToast('Erro ao salvar empresa.');
+        console.error(e);
     }
-    localStorage.setItem('nomos_empresas', JSON.stringify(empresas));
-    closeEmpresaModal();
-    renderEmpresas();
-    populateEmpresaSelects();
-    showToast(id ? 'Empresa atualizada!' : 'Empresa cadastrada!');
 }
 
 // ====================== ESTRUTURA ORGANIZACIONAL ======================
+async function loadInstitutions() {
+    try {
+        institutions = await apiFetch('/organization/institutions') || [];
+        populateEmpresaSelects();
+    } catch (e) {
+        console.error('Erro ao carregar instituições:', e);
+    }
+}
+
 function populateEmpresaSelects() {
-    const opts = '<option value="">Escolher Empresa...</option>' +
-        empresas.map(e => `<option value="${e.id}">${e.nome}</option>`).join('');
+    // Use API institutions for the estrutura select
+    const apiOpts = '<option value="">Escolher Empresa...</option>' +
+        institutions.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
     const estSelect = document.getElementById('estrutura-empresa-select');
-    if (estSelect) estSelect.innerHTML = opts;
+    if (estSelect) estSelect.innerHTML = apiOpts;
+
+    // User modal uses API institutions
     const usrSelect = document.getElementById('usr-empresaId');
-    if (usrSelect) usrSelect.innerHTML = opts;
+    if (usrSelect) usrSelect.innerHTML = '<option value="">Escolher Empresa...</option>' +
+        institutions.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
 }
 
 async function renderEstrutura() {
-    const empId = document.getElementById('estrutura-empresa-select')?.value;
-    if (!empId) {
+    const institutionId = document.getElementById('estrutura-empresa-select')?.value;
+    if (!institutionId) {
         ['diretorias', 'areas', 'centrosCusto'].forEach(key => {
             const listEl = document.getElementById('list-' + key);
             if (listEl) {
@@ -134,20 +160,87 @@ async function renderEstrutura() {
         });
         return;
     }
-    const org = estrutura[empId] || { diretorias: [], areas: [], centrosCusto: [] };
-    renderOrgList('diretorias', org.diretorias, empId);
-    renderOrgList('areas', org.areas, empId);
 
-    // Cost centers from API if institutionId available
-    if (typeof apiFetch === 'function' && currentUser && currentUser.institutionId) {
-        try {
-            const apiCostCenters = await apiFetch(`/organization/institutions/${currentUser.institutionId}/cost-centers`);
-            renderCostCenterList(apiCostCenters || []);
-        } catch (e) {
-            renderOrgList('centrosCusto', org.centrosCusto, empId);
+    // Diretorias from API
+    let loadedDirectorates = [];
+    try {
+        loadedDirectorates = await apiFetch(`/organization/institutions/${institutionId}/directorates`) || [];
+        renderDirectorateList(loadedDirectorates, institutionId);
+        // Populate the directorate selector for new area creation
+        const dirSel = document.getElementById('new-area-diretoria');
+        if (dirSel) {
+            dirSel.innerHTML = '<option value="">Selecionar diretoria...</option>' +
+                loadedDirectorates.map(d => `<option value="${d.id}">${d.nome}</option>`).join('');
         }
-    } else {
-        renderOrgList('centrosCusto', org.centrosCusto, empId);
+    } catch (e) {
+        document.getElementById('list-diretorias').innerHTML =
+            '<p class="text-center py-10 text-slate-300 text-xs font-bold uppercase">Erro ao carregar</p>';
+    }
+
+    // Áreas from API
+    try {
+        const areas = await apiFetch(`/organization/institutions/${institutionId}/areas`) || [];
+        renderAreaList(areas, loadedDirectorates);
+    } catch (e) {
+        document.getElementById('list-areas').innerHTML =
+            '<p class="text-center py-10 text-slate-300 text-xs font-bold uppercase">Erro ao carregar</p>';
+    }
+
+    // Centros de Custo from API
+    try {
+        const costCenters = await apiFetch(`/organization/institutions/${institutionId}/cost-centers`);
+        renderCostCenterList(costCenters || [], institutionId);
+    } catch (e) {
+        document.getElementById('list-centrosCusto').innerHTML =
+            '<p class="text-center py-10 text-slate-300 text-xs font-bold uppercase">Erro ao carregar</p>';
+    }
+}
+
+function renderDirectorateList(items, institutionId) {
+    const container = document.getElementById('list-diretorias');
+    if (!container) return;
+    if (items.length === 0) {
+        container.innerHTML = '<p class="text-center py-10 text-slate-300 text-xs font-bold uppercase">Nenhuma diretoria cadastrada</p>';
+        return;
+    }
+    container.innerHTML = items.map(item => `
+        <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl group hover:bg-slate-100 dark:hover:bg-slate-700/30 transition-all">
+            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${item.nome}</span>
+        </div>
+    `).join('');
+}
+
+function renderAreaList(areas, directorates) {
+    const container = document.getElementById('list-areas');
+    if (!container) return;
+    if (areas.length === 0) {
+        container.innerHTML = '<p class="text-center py-10 text-slate-300 text-xs font-bold uppercase">Nenhuma área cadastrada</p>';
+        return;
+    }
+    container.innerHTML = areas.map(area => {
+        const dir = directorates.find(d => d.id === area.directorateId);
+        return `
+        <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl group hover:bg-slate-100 dark:hover:bg-slate-700/30 transition-all">
+            <div>
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${area.nome}</span>
+                ${dir ? `<p class="text-[9px] text-slate-400 mt-0.5">${dir.nome}</p>` : ''}
+            </div>
+            <button onclick="deleteArea('${area.id}')"
+                class="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                <span class="material-symbols-outlined text-lg">delete</span>
+            </button>
+        </div>`;
+    }).join('');
+}
+
+async function deleteArea(id) {
+    if (!confirm('Excluir esta área?')) return;
+    try {
+        await apiFetch(`/organization/areas/${id}`, { method: 'DELETE' });
+        renderEstrutura();
+        showToast('Área excluída.');
+    } catch (e) {
+        showToast('Erro ao excluir área. Verifique se não há escopos vinculados.');
     }
 }
 
@@ -169,60 +262,97 @@ function renderOrgList(key, items, empId) {
     `).join('');
 }
 
-function renderCostCenterList(items) {
+function renderCostCenterList(items, institutionId) {
     const container = document.getElementById('list-centrosCusto');
     if (!container) return;
     if (items.length === 0) {
-        container.innerHTML = '<p class="text-center py-10 text-slate-300 text-xs font-bold uppercase">Nenhum item cadastrado</p>';
+        container.innerHTML = '<p class="text-center py-10 text-slate-300 text-xs font-bold uppercase">Nenhum centro de custo cadastrado</p>';
         return;
     }
     container.innerHTML = items.map(item => `
         <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl group hover:bg-slate-100 dark:hover:bg-slate-700/30 transition-all">
             <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${item.nome}${item.codigo ? ' (' + item.codigo + ')' : ''}</span>
+            <button onclick="deleteCostCenter('${item.id}', '${institutionId}')"
+                class="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                <span class="material-symbols-outlined text-lg">delete</span>
+            </button>
         </div>
     `).join('');
 }
 
 async function addOrgItem(type) {
-    const empId = document.getElementById('estrutura-empresa-select')?.value;
-    if (!empId) { alert('Selecione uma empresa primeiro.'); return; }
+    const institutionId = document.getElementById('estrutura-empresa-select')?.value;
+    if (!institutionId) { alert('Selecione uma empresa primeiro.'); return; }
 
-    // Cost centers use API
     if (type === 'centroCusto') {
         const input = document.getElementById('new-centroCusto');
         if (!input) return;
         const name = input.value.trim();
         if (!name) return;
-        if (typeof apiFetch === 'function' && currentUser && currentUser.institutionId) {
-            try {
-                await apiFetch('/organization/cost-centers', {
-                    method: 'POST',
-                    body: JSON.stringify({ nome: name, codigo: '', institutionId: currentUser.institutionId })
-                });
-                input.value = '';
-                renderEstrutura();
-                showToast('Centro de custo adicionado!');
-            } catch (e) {
-                showToast('Erro ao adicionar centro de custo.');
-            }
+        try {
+            await apiFetch('/organization/cost-centers', {
+                method: 'POST',
+                body: JSON.stringify({ nome: name, codigo: '', institutionId })
+            });
+            input.value = '';
+            renderEstrutura();
+            showToast('Centro de custo adicionado!');
+        } catch (e) {
+            showToast('Erro ao adicionar centro de custo.');
         }
         return;
     }
 
-    const key = type === 'diretoria' ? 'diretorias' : type === 'area' ? 'areas' : 'centrosCusto';
-    const input = document.getElementById('new-' + type);
+    if (type === 'diretoria') {
+        const input = document.getElementById('new-diretoria');
+        if (!input) return;
+        const name = input.value.trim();
+        if (!name) return;
+        try {
+            await apiFetch('/organization/directorates', {
+                method: 'POST',
+                body: JSON.stringify({ nome: name, institutionId })
+            });
+            input.value = '';
+            renderEstrutura();
+            showToast('Diretoria adicionada!');
+        } catch (e) {
+            showToast('Erro ao adicionar diretoria.');
+        }
+        return;
+    }
+
+    // Areas via API (require directorate selection)
+    const input = document.getElementById('new-area');
+    const dirSelect = document.getElementById('new-area-diretoria');
     if (!input) return;
     const name = input.value.trim();
+    const directorateId = dirSelect?.value;
     if (!name) return;
+    if (!directorateId) { alert('Selecione a Diretoria da área.'); return; }
+    try {
+        await apiFetch('/organization/areas', {
+            method: 'POST',
+            body: JSON.stringify({ nome: name, directorateId })
+        });
+        input.value = '';
+        if (dirSelect) dirSelect.value = '';
+        renderEstrutura();
+        showToast('Área adicionada!');
+    } catch (e) {
+        showToast('Erro ao adicionar área.');
+    }
+}
 
-    if (!estrutura[empId]) estrutura[empId] = { diretorias: [], areas: [], centrosCusto: [] };
-    if (estrutura[empId][key].includes(name)) { alert('Este item já existe.'); return; }
-
-    estrutura[empId][key].push(name);
-    localStorage.setItem('nomos_estrutura', JSON.stringify(estrutura));
-    input.value = '';
-    renderEstrutura();
-    showToast('Item adicionado!');
+async function deleteCostCenter(id, institutionId) {
+    if (!confirm('Excluir este centro de custo?')) return;
+    try {
+        await apiFetch(`/organization/cost-centers/${id}`, { method: 'DELETE' });
+        renderEstrutura();
+        showToast('Centro de custo excluído.');
+    } catch (e) {
+        showToast('Erro ao excluir. Verifique se não está vinculado a algum escopo.');
+    }
 }
 
 function deleteOrgItem(empId, key, name) {
@@ -234,6 +364,23 @@ function deleteOrgItem(empId, key, name) {
 }
 
 // ====================== USUÁRIOS ======================
+const roleLabels = { ADMIN: 'Master', CONTROLLER: 'Controller', USER: 'Visualizador' };
+const roleColors = {
+    ADMIN: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    CONTROLLER: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    USER: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+};
+
+async function loadUsers() {
+    if (!currentUser.institutionId) return;
+    try {
+        users = await apiFetch(`/users?institutionId=${currentUser.institutionId}&all=true`) || [];
+        renderUsers();
+    } catch (e) {
+        console.error('Erro ao carregar usuários:', e);
+    }
+}
+
 function renderUsers() {
     const tbody = document.getElementById('usuarios-tbody');
     const empty = document.getElementById('usuarios-empty');
@@ -245,56 +392,49 @@ function renderUsers() {
     }
     empty.classList.add('hidden');
     tbody.innerHTML = users.map(u => {
-        const empName = empresas.find(e => e.id === u.empresaId)?.nome || 'Empresa Removida';
-        const initials = u.name.split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
-        const roleColor = u.role === 'Master' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-            u.role === 'Controller' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
+        const instName = institutions.find(i => i.id === u.institutionId)?.nome || '—';
+        const initials = u.nome.split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
+        const roleLabel = roleLabels[u.role] || u.role;
+        const roleColor = roleColors[u.role] || roleColors.USER;
+        const isInativo = u.status === 'INATIVO';
         return `
-        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${isInativo ? 'opacity-50' : ''}">
             <td class="px-8 py-5">
                 <div class="flex items-center gap-3">
                     <div class="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">${initials}</div>
                     <div>
-                        <p class="text-sm font-bold text-slate-900 dark:text-white">${u.name}</p>
+                        <p class="text-sm font-bold text-slate-900 dark:text-white">${u.nome} ${isInativo ? '<span class="text-[9px] text-slate-400 font-normal">(inativo)</span>' : ''}</p>
                         <p class="text-[10px] text-slate-400">${u.email}</p>
                     </div>
                 </div>
             </td>
-            <td class="px-8 py-5 text-xs font-bold text-blue-600 dark:text-blue-400">${empName}</td>
+            <td class="px-8 py-5 text-xs font-bold text-blue-600 dark:text-blue-400">${instName}</td>
             <td class="px-8 py-5">
-                <p class="text-xs font-bold text-slate-800 dark:text-slate-200">${u.position || '-'}</p>
-                <p class="text-[10px] text-slate-400 uppercase">${u.diretoria || ''}${u.area ? ' > ' + u.area : ''}</p>
+                <p class="text-xs font-bold text-slate-800 dark:text-slate-200">${u.cargo || '—'}</p>
             </td>
             <td class="px-8 py-5">
-                <span class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg ${roleColor}">${u.role}</span>
+                <span class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg ${roleColor}">${roleLabel}</span>
             </td>
             <td class="px-8 py-5 text-right">
                 <button onclick="editUser('${u.id}')" class="text-primary text-xs font-bold hover:underline">Editar</button>
-                <button onclick="deleteUser('${u.id}')" class="text-red-400 text-xs font-bold hover:underline ml-3">Excluir</button>
+                ${!isInativo ? `<button onclick="deleteUser('${u.id}')" class="text-red-400 text-xs font-bold hover:underline ml-3">Desativar</button>` : ''}
             </td>
         </tr>`;
     }).join('');
 }
 
 function openUserModal(user) {
-    document.getElementById('usr-name').value = user ? user.name : '';
+    document.getElementById('usr-name').value = user ? user.nome : '';
     document.getElementById('usr-email').value = user ? user.email : '';
-    document.getElementById('usr-empresaId').value = user ? user.empresaId : '';
-    document.getElementById('usr-position').value = user ? user.position || '' : '';
-    document.getElementById('usr-role').value = user ? user.role : 'Visualizador';
+    document.getElementById('usr-empresaId').value = user ? (user.institutionId || '') : '';
+    document.getElementById('usr-position').value = user ? (user.cargo || '') : '';
+    document.getElementById('usr-role').value = user ? user.role : 'USER';
     document.getElementById('usr-id').value = user ? user.id : '';
     const titleEl = document.getElementById('modal-user-title');
     if (titleEl) titleEl.textContent = user ? 'Editar Usuário' : 'Cadastro de Usuário';
-    loadUserOrgOptions();
-    if (user) {
-        setTimeout(() => {
-            const dirEl = document.getElementById('usr-diretoria');
-            if (dirEl) dirEl.value = user.diretoria || '';
-            const areaEl = document.getElementById('usr-area');
-            if (areaEl) areaEl.value = user.area || '';
-        }, 50);
-    }
+    // Show/hide password hint
+    const pwHint = document.getElementById('usr-senha-hint');
+    if (pwHint) pwHint.classList.toggle('hidden', !!user);
     const modal = document.getElementById('modal-usuario');
     if (modal) {
         modal.style.display = 'flex';
@@ -311,16 +451,7 @@ function closeUserModal() {
 }
 
 function loadUserOrgOptions() {
-    const empId = document.getElementById('usr-empresaId')?.value;
-    const org = empId ? (estrutura[empId] || { diretorias: [], areas: [] }) : { diretorias: [], areas: [] };
-    const dirEl = document.getElementById('usr-diretoria');
-    if (dirEl) {
-        dirEl.innerHTML = '<option value="">Escolher...</option>' + (org.diretorias || []).map(d => `<option value="${d}">${d}</option>`).join('');
-    }
-    const areaEl = document.getElementById('usr-area');
-    if (areaEl) {
-        areaEl.innerHTML = '<option value="">Escolher...</option>' + (org.areas || []).map(a => `<option value="${a}">${a}</option>`).join('');
-    }
+    // No-op: directorate/area in user modal removed (not stored in User entity)
 }
 
 function editUser(id) {
@@ -328,47 +459,55 @@ function editUser(id) {
     if (user) openUserModal(user);
 }
 
-function deleteUser(id) {
-    if (!confirm('Deseja realmente excluir este usuário?')) return;
-    users = users.filter(u => u.id !== id);
-    localStorage.setItem('nomos_users', JSON.stringify(users));
-    renderUsers();
-    showToast('Usuário excluído.');
+async function deleteUser(id) {
+    if (!confirm('Desativar este usuário? Ele perderá acesso ao sistema.')) return;
+    try {
+        await apiFetch(`/users/${id}`, { method: 'DELETE' });
+        await loadUsers();
+        showToast('Usuário desativado.');
+    } catch (e) {
+        showToast('Erro ao desativar usuário.');
+    }
 }
 
-function saveUser() {
-    const name = document.getElementById('usr-name')?.value.trim();
+async function saveUser() {
+    const nome = document.getElementById('usr-name')?.value.trim();
     const email = document.getElementById('usr-email')?.value.trim();
-    const empresaId = document.getElementById('usr-empresaId')?.value;
+    const institutionId = document.getElementById('usr-empresaId')?.value || currentUser.institutionId;
     const role = document.getElementById('usr-role')?.value;
-    const position = document.getElementById('usr-position')?.value.trim();
-    const diretoria = document.getElementById('usr-diretoria')?.value;
-    const area = document.getElementById('usr-area')?.value;
+    const cargo = document.getElementById('usr-position')?.value.trim();
     const id = document.getElementById('usr-id')?.value;
 
-    if (!name || !email || !empresaId) {
-        alert('Preencha Nome, E-mail e selecione a Empresa.');
-        return;
-    }
+    if (!nome || !email) { alert('Preencha Nome e E-mail.'); return; }
 
-    const newUser = { id: id || Date.now().toString(), name, email, role, position, diretoria, area, empresaId };
-
-    if (id) {
-        users = users.map(u => u.id === id ? newUser : u);
-    } else {
-        users.push(newUser);
+    try {
+        if (id) {
+            await apiFetch(`/users/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ nome, email, role, cargo, status: 'ATIVO' })
+            });
+            showToast('Usuário atualizado!');
+        } else {
+            await apiFetch('/users', {
+                method: 'POST',
+                body: JSON.stringify({ nome, email, role, cargo, institutionId })
+            });
+            showToast('Usuário criado! Senha padrão: Nomos@2024');
+        }
+        closeUserModal();
+        await loadUsers();
+    } catch (e) {
+        const msg = e.message || '';
+        showToast(msg.includes('E-mail já cadastrado') ? 'E-mail já cadastrado.' : 'Erro ao salvar usuário.');
+        console.error(e);
     }
-    localStorage.setItem('nomos_users', JSON.stringify(users));
-    closeUserModal();
-    renderUsers();
-    showToast(id ? 'Usuário atualizado!' : 'Usuário cadastrado!');
 }
 
-function init() {
+async function init() {
+    await loadInstitutions();
     renderEmpresas();
-    renderUsers();
-    populateEmpresaSelects();
+    await loadUsers();
     renderEstrutura();
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('nomos:sessionReady', init);

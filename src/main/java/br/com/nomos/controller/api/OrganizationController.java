@@ -6,12 +6,16 @@ import br.com.nomos.dto.organization.DirectorateDTO;
 import br.com.nomos.dto.organization.InstitutionDTO;
 import br.com.nomos.service.OrganizationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -27,14 +31,26 @@ public class OrganizationController {
     @GetMapping("/institutions")
     public List<InstitutionDTO> listInstitutions() {
         return organizationService.listInstitutions().stream()
-                .map(i -> new InstitutionDTO(i.getId(), i.getNome(), i.isAtivo()))
+                .map(i -> new InstitutionDTO(i.getId(), i.getNome(), i.getCnpj(), i.isAtivo()))
                 .toList();
     }
 
     @PostMapping("/institutions")
     public InstitutionDTO createInstitution(@RequestBody InstitutionDTO dto) {
-        var institution = organizationService.createInstitution(dto.nome());
-        return new InstitutionDTO(institution.getId(), institution.getNome(), institution.isAtivo());
+        var institution = organizationService.createInstitution(dto.nome(), dto.cnpj());
+        return new InstitutionDTO(institution.getId(), institution.getNome(), institution.getCnpj(), institution.isAtivo());
+    }
+
+    @PutMapping("/institutions/{id}")
+    public InstitutionDTO updateInstitution(@PathVariable UUID id, @RequestBody InstitutionDTO dto) {
+        var institution = organizationService.updateInstitution(id, dto.nome(), dto.cnpj());
+        return new InstitutionDTO(institution.getId(), institution.getNome(), institution.getCnpj(), institution.isAtivo());
+    }
+
+    @DeleteMapping("/institutions/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteInstitution(@PathVariable UUID id) {
+        organizationService.deleteInstitution(id);
     }
 
     @GetMapping("/institutions/{id}/directorates")
@@ -63,6 +79,20 @@ public class OrganizationController {
         return new AreaDTO(area.getId(), area.getNome(), area.getDirectorate().getId());
     }
 
+    @DeleteMapping("/areas/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteArea(@PathVariable UUID id) {
+        organizationService.deleteArea(id);
+    }
+
+    @GetMapping("/institutions/{id}/areas")
+    public List<AreaDTO> listAllAreasForInstitution(@PathVariable UUID id) {
+        return organizationService.listDirectoratesByInstitution(id).stream()
+                .flatMap(d -> organizationService.listAreasByDirectorate(d.getId()).stream()
+                        .map(a -> new AreaDTO(a.getId(), a.getNome(), a.getDirectorate().getId())))
+                .toList();
+    }
+
     @GetMapping("/institutions/{id}/cost-centers")
     public List<CostCenterDTO> listCostCenters(@PathVariable UUID id) {
         return organizationService.listCostCentersByInstitution(id).stream()
@@ -74,5 +104,11 @@ public class OrganizationController {
     public CostCenterDTO createCostCenter(@RequestBody CostCenterDTO dto) {
         var cc = organizationService.createCostCenter(dto.nome(), dto.codigo(), dto.institutionId());
         return new CostCenterDTO(cc.getId(), cc.getNome(), cc.getCodigo(), cc.getInstitution().getId());
+    }
+
+    @DeleteMapping("/cost-centers/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCostCenter(@PathVariable UUID id) {
+        organizationService.deleteCostCenter(id);
     }
 }

@@ -4,8 +4,11 @@ import br.com.nomos.domain.action.ActionPlan;
 import br.com.nomos.domain.risk.RiskLevel;
 import br.com.nomos.domain.test.ExecutionRecord;
 import br.com.nomos.dto.dashboard.*;
+import br.com.nomos.dto.dashboard.HomeSummaryDTO;
+import br.com.nomos.domain.test.PlanningItem;
 import br.com.nomos.repository.action.ActionPlanRepository;
 import br.com.nomos.repository.test.ExecutionRecordRepository;
+import br.com.nomos.repository.test.PlanningItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,7 @@ public class DashboardService {
 
         private final ExecutionRecordRepository executionRecordRepository;
         private final ActionPlanRepository actionPlanRepository;
+        private final PlanningItemRepository planningItemRepository;
 
         @Transactional(readOnly = true)
         public ComplianceDashboardDTO getComplianceStats(UUID institutionId, UUID directorateId, UUID areaId) {
@@ -196,5 +200,85 @@ public class DashboardService {
 
                 return new ActionPlansOverviewDTO(total, completionRate, active, monthlyStats, areaStats,
                                 directorateStats);
+        }
+
+        @Transactional(readOnly = true)
+        public HomeSummaryDTO getHomeSummary(UUID institutionId) {
+                List<PlanningItem> allItems = planningItemRepository.findAll().stream()
+                                .filter(p -> p.getScopeItem() != null
+                                                && p.getScopeItem().getArea() != null
+                                                && p.getScopeItem().getArea().getDirectorate() != null
+                                                && p.getScopeItem().getArea().getDirectorate().getInstitution() != null
+                                                && p.getScopeItem().getArea().getDirectorate().getInstitution().getId()
+                                                                .equals(institutionId))
+                                .toList();
+
+                long totalPlanejados = allItems.size();
+                long totalRealizados = allItems.stream().filter(p -> "Realizado".equals(p.getStatus())).count();
+                long totalPendentes = allItems.stream().filter(p -> "Planejado".equals(p.getStatus())).count();
+
+                List<ExecutionRecord> executions = executionRecordRepository.findAll().stream()
+                                .filter(e -> e.getScopeItem() != null
+                                                && e.getScopeItem().getArea() != null
+                                                && e.getScopeItem().getArea().getDirectorate() != null
+                                                && e.getScopeItem().getArea().getDirectorate().getInstitution() != null
+                                                && e.getScopeItem().getArea().getDirectorate().getInstitution().getId()
+                                                                .equals(institutionId))
+                                .toList();
+
+                BigDecimal avgConformidade = BigDecimal.ZERO;
+                List<BigDecimal> percentages = executions.stream()
+                                .map(ExecutionRecord::getConformityPercentage)
+                                .filter(Objects::nonNull)
+                                .toList();
+                if (!percentages.isEmpty()) {
+                        avgConformidade = percentages.stream()
+                                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                                        .divide(BigDecimal.valueOf(percentages.size()), 2, RoundingMode.HALF_UP);
+                }
+
+                List<ActionPlan> plans = actionPlanRepository.findAll().stream()
+                                .filter(p -> p.getExecutionRecord() != null
+                                                && p.getExecutionRecord().getScopeItem() != null
+                                                && p.getExecutionRecord().getScopeItem().getArea() != null
+                                                && p.getExecutionRecord().getScopeItem().getArea()
+                                                                .getDirectorate() != null
+                                                && p.getExecutionRecord().getScopeItem().getArea().getDirectorate()
+                                                                .getInstitution() != null
+                                                && p.getExecutionRecord().getScopeItem().getArea().getDirectorate()
+                                                                .getInstitution().getId().equals(institutionId))
+                                .toList();
+
+                long draft = plans.stream().filter(p -> "DRAFT".equals(p.getStatus())).count();
+                long active = plans.stream().filter(p -> "ACTIVE".equals(p.getStatus())).count();
+                long completed = plans.stream().filter(p -> "COMPLETED".equals(p.getStatus())).count();
+
+                List<HomeSummaryDTO.PendingTestDTO> pending = allItems.stream()
+                                .filter(p -> "Planejado".equals(p.getStatus()))
+                                .sorted(Comparator.comparingInt(p -> {
+                                        if (p.getScopeItem() == null || p.getScopeItem().getRiskLevel() == null)
+                                                return 2;
+                                        return switch (p.getScopeItem().getRiskLevel()) {
+                                                case ALTO -> 0;
+                                                case MEDIO -> 1;
+                                                case BAIXO -> 2;
+                                        };
+                                }))
+                                .limit(20)
+                                .map(p -> new HomeSummaryDTO.PendingTestDTO(
+                                                p.getId(),
+                                                p.getScopeItem().getId(),
+                                                p.getScopeItem().getNome(),
+                                                p.getScopeItem().getArea().getNome(),
+                                                p.getScopeItem().getArea().getDirectorate().getNome(),
+                                                p.getMes(),
+                                                p.getAno(),
+                                                p.getScopeItem().getRiskLevel() != null
+                                                                ? p.getScopeItem().getRiskLevel().name()
+                                                                : "N/A"))
+                                .toList();
+
+                return new HomeSummaryDTO(totalPlanejados, totalRealizados, totalPendentes, avgConformidade,
+                                draft, active, completed, pending);
         }
 }

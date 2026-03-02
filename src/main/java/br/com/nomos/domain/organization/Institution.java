@@ -30,11 +30,20 @@ public class Institution {
     @Column(nullable = false, unique = true)
     private String nome;
 
+    @Column
+    private String cnpj;
+
     @Column(nullable = false)
     private boolean ativo = true;
 
     public Institution(String nome) {
         this.nome = nome;
+        this.ativo = true;
+    }
+
+    public Institution(String nome, String cnpj) {
+        this.nome = nome;
+        this.cnpj = cnpj;
         this.ativo = true;
     }
 }

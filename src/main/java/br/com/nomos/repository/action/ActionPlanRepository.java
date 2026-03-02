@@ -11,8 +11,7 @@ import java.util.UUID;
 @Repository
 public interface ActionPlanRepository extends JpaRepository<ActionPlan, UUID> {
 
-    // Finds all action plans optionally filtering by status
     List<ActionPlan> findAllByOrderByCreatedAtDesc();
 
-    // Future: findAllByInstitutionId
+    List<ActionPlan> findByExecutionRecord_IdIn(List<UUID> executionIds);
 }

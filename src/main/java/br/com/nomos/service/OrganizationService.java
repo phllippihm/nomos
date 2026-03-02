@@ -30,8 +30,22 @@ public class OrganizationService {
     }
 
     @Transactional
-    public Institution createInstitution(String nome) {
-        return institutionRepository.save(new Institution(nome));
+    public Institution createInstitution(String nome, String cnpj) {
+        return institutionRepository.save(new Institution(nome, cnpj));
+    }
+
+    @Transactional
+    public Institution updateInstitution(UUID id, String nome, String cnpj) {
+        Institution inst = institutionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Instituição não encontrada"));
+        inst.setNome(nome);
+        inst.setCnpj(cnpj);
+        return institutionRepository.save(inst);
+    }
+
+    @Transactional
+    public void deleteInstitution(UUID id) {
+        institutionRepository.deleteById(id);
     }
 
     @Transactional(readOnly = true)
@@ -62,6 +76,11 @@ public class OrganizationService {
         return areaRepository.save(new Area(nome, directorate));
     }
 
+    @Transactional
+    public void deleteArea(UUID id) {
+        areaRepository.deleteById(id);
+    }
+
     @Transactional(readOnly = true)
     public List<CostCenter> listCostCentersByInstitution(UUID institutionId) {
         return costCenterRepository.findByInstitutionId(institutionId);
@@ -72,5 +91,10 @@ public class OrganizationService {
         Institution institution = institutionRepository.findById(institutionId)
                 .orElseThrow(() -> new RuntimeException("Instituição não encontrada"));
         return costCenterRepository.save(new CostCenter(nome, codigo, institution));
+    }
+
+    @Transactional
+    public void deleteCostCenter(UUID id) {
+        costCenterRepository.deleteById(id);
     }
 }

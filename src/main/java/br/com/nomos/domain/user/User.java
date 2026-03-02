@@ -51,6 +51,9 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @Column
+    private String cargo;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "institution_id", nullable = false)
     private Institution institution;

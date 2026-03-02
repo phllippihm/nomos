@@ -1,4 +1,4 @@
-﻿<head th:replace="~{fragments/head :: head('Executive Dashboard - Nomos')}"></head>
+<head th:replace="~{fragments/head :: head('Executive Dashboard - Nomos')}"></head>
 
 <body
     class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 antialiased transition-colors duration-200">
@@ -9,236 +9,199 @@
                 class="h-20 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-10 sticky top-0 z-20">
                 <div class="flex items-center gap-8">
                     <div class="flex items-center gap-3">
-                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Acesso
-                            Rápido:</span>
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Acesso Rápido:</span>
                         <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-                            <button
-                                class="px-3 py-1.5 text-xs font-semibold text-primary bg-white dark:bg-slate-700 rounded-md shadow-sm">Atalhos</button>
-                            <button
-                                class="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">Recentes</button>
+                            <button class="px-3 py-1.5 text-xs font-semibold text-primary bg-white dark:bg-slate-700 rounded-md shadow-sm">Atalhos</button>
                         </div>
                     </div>
                 </div>
                 <div class="flex items-center gap-6">
-                    <div
-                        class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-primary dark:text-blue-400 rounded-full border border-blue-100 dark:border-blue-900/30">
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-primary dark:text-blue-400 rounded-full border border-blue-100 dark:border-blue-900/30">
                         <span class="material-symbols-outlined text-base">person_search</span>
                         <span class="text-[11px] font-bold uppercase tracking-wider">Simular Perfil: Master Root</span>
                     </div>
                     <div class="h-8 w-[1px] bg-slate-200 dark:bg-slate-800"></div>
-                    <button class="p-2 text-slate-400 hover:text-primary transition-colors" aria-label="Notificações">
-                        <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+                    <button class="p-2 text-slate-400 hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined">notifications</span>
                     </button>
-                    <button id="logout-button" class="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                        title="Sair" aria-label="Encerrar Sessão">
-                        <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+                    <button id="logout-button" class="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Sair">
+                        <span class="material-symbols-outlined">logout</span>
                     </button>
                 </div>
             </header>
-            <div class="p-10 max-w-[1400px] mx-auto space-y-12">
+
+            <div class="p-10 max-w-[1400px] mx-auto space-y-10">
+
+                <!-- Page Header -->
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
-                        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Executive
-                            Dashboard</h1>
-                        <p class="text-slate-500 dark:text-slate-400 mt-2 text-lg">Olá, <span
-                                class="text-slate-900 dark:text-white font-medium">Master Root</span>. Aqui estão os
-                            dados de hoje.</p>
+                        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Executive Dashboard</h1>
+                        <p class="text-slate-500 dark:text-slate-400 mt-2 text-lg">Olá, <span id="greeting-name" class="text-slate-900 dark:text-white font-medium">...</span>. Aqui estão os dados de hoje.</p>
                     </div>
-                    <div
-                        class="bg-white dark:bg-slate-800 px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-400 dark:text-slate-400 shadow-sm flex items-center gap-3 tracking-widest uppercase">
+                    <div class="bg-white dark:bg-slate-800 px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-400 shadow-sm flex items-center gap-3 tracking-widest uppercase">
                         <span class="material-symbols-outlined text-lg text-primary">calendar_today</span>
-                        Quinta-feira, 12 de Fevereiro
+                        <span id="kpi-date">—</span>
                     </div>
                 </div>
-                <!-- Cartões de Resumo -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <div
-                        class="bg-surface-light dark:bg-surface-dark p-8 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 dark:hover:shadow-none transition-all duration-300 group">
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-surface-light dark:bg-surface-dark p-8 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300">
                         <div class="flex justify-between items-center mb-8">
-                            <div
-                                class="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center text-primary dark:text-indigo-400">
+                            <div class="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center text-primary">
                                 <span class="material-symbols-outlined text-3xl">bar_chart</span>
                             </div>
-                            <span
-                                class="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Estável</span>
+                            <span class="bg-slate-100 dark:bg-slate-700 text-slate-500 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Total</span>
                         </div>
-                        <p
-                            class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
-                            Testes Planejados</p>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Testes Planejados</p>
                         <div class="flex items-baseline gap-2">
-                            <p class="text-5xl font-black text-slate-900 dark:text-white">0</p>
-                            <span class="text-xs font-medium text-slate-400">este mês</span>
+                            <p id="kpi-planejados" class="text-5xl font-black text-slate-900 dark:text-white">—</p>
+                            <span class="text-xs font-medium text-slate-400">no ano</span>
                         </div>
                     </div>
-                    <div
-                        class="bg-surface-light dark:bg-surface-dark p-8 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 dark:hover:shadow-none transition-all duration-300">
+
+                    <div class="bg-surface-light dark:bg-surface-dark p-8 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300">
                         <div class="flex justify-between items-center mb-8">
-                            <div
-                                class="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center text-primary dark:text-indigo-400">
+                            <div class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                                 <span class="material-symbols-outlined text-3xl">task_alt</span>
                             </div>
-                            <span
-                                class="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Em
-                                Dia</span>
+                            <span class="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Concluídos</span>
                         </div>
-                        <p
-                            class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
-                            Testes Realizados</p>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Testes Realizados</p>
                         <div class="flex items-baseline gap-2">
-                            <p class="text-5xl font-black text-slate-900 dark:text-white">0</p>
-                            <span class="text-xs font-medium text-slate-400">concluídos</span>
+                            <p id="kpi-realizados" class="text-5xl font-black text-slate-900 dark:text-white">—</p>
+                            <span class="text-xs font-medium text-slate-400">executados</span>
                         </div>
                     </div>
-                    <div
-                        class="bg-surface-light dark:bg-surface-dark p-8 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 dark:hover:shadow-none transition-all duration-300">
+
+                    <div class="bg-surface-light dark:bg-surface-dark p-8 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300">
                         <div class="flex justify-between items-center mb-8">
-                            <div
-                                class="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center text-primary dark:text-indigo-400">
+                            <div class="w-14 h-14 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center text-amber-600 dark:text-amber-400">
                                 <span class="material-symbols-outlined text-3xl">hourglass_empty</span>
                             </div>
-                            <span
-                                class="bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Normal</span>
+                            <span class="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Pendentes</span>
                         </div>
-                        <p
-                            class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
-                            Testes Pendentes</p>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Testes Pendentes</p>
                         <div class="flex items-baseline gap-2">
-                            <p class="text-5xl font-black text-slate-900 dark:text-white">0</p>
+                            <p id="kpi-pendentes" class="text-5xl font-black text-slate-900 dark:text-white">—</p>
                             <span class="text-xs font-medium text-slate-400">aguardando</span>
                         </div>
                     </div>
-                    <div
-                        class="bg-surface-light dark:bg-surface-dark p-8 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 dark:hover:shadow-none transition-all duration-300">
+
+                    <div class="bg-surface-light dark:bg-surface-dark p-8 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300">
                         <div class="flex justify-between items-center mb-8">
-                            <div
-                                class="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center text-primary dark:text-indigo-400">
+                            <div class="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-primary">
                                 <span class="material-symbols-outlined text-3xl">verified_user</span>
                             </div>
-                            <span
-                                class="bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Score</span>
+                            <span class="bg-blue-50 dark:bg-blue-900/20 text-primary text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Score</span>
                         </div>
-                        <p
-                            class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
-                            Conformidade Média</p>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Conformidade Média</p>
                         <div class="flex items-baseline gap-2">
-                            <p class="text-5xl font-black text-slate-900 dark:text-white">0.0<span
-                                    class="text-3xl font-bold opacity-50">%</span></p>
+                            <p id="kpi-conformidade" class="text-5xl font-black text-slate-900 dark:text-white">—</p>
+                            <span class="text-3xl font-bold text-slate-300 dark:text-slate-600">%</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
-                            Atalhos Rápidos</h2>
-                        <div class="flex gap-2">
-                            <button aria-label="Ver atalhos anteriores"
-                                class="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-primary transition-colors">
-                                <span class="material-symbols-outlined text-sm" aria-hidden="true">chevron_left</span>
-                            </button>
-                            <button aria-label="Ver próximos atalhos"
-                                class="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-primary transition-colors">
-                                <span class="material-symbols-outlined text-sm" aria-hidden="true">chevron_right</span>
-                            </button>
-                        </div>
+                <!-- Planos de Ação Strip -->
+                <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 shadow-sm px-8 py-5 flex flex-wrap items-center gap-6">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400 text-xl">assignment</span>
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Planos de Ação</span>
                     </div>
-                    <div class="flex overflow-x-auto pb-4 gap-4 no-scrollbar">
-                        <a class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group"
-                            href="/parametrizar-matrizes">
-                            <div
-                                class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary dark:text-indigo-300 group-hover:scale-110 transition-transform">
+                    <div class="h-5 w-px bg-slate-200 dark:bg-slate-700"></div>
+                    <a href="/planos-acao" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                        <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
+                            <span class="text-amber-600 dark:text-amber-400 text-xs font-black" id="kpi-ap-draft">—</span>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">Em Rascunho</span>
+                    </a>
+                    <a href="/planos-acao" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                        <div class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                            <span class="text-primary dark:text-blue-400 text-xs font-black" id="kpi-ap-active">—</span>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">Em Andamento</span>
+                    </a>
+                    <a href="/planos-acao" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                            <span class="text-emerald-600 dark:text-emerald-400 text-xs font-black" id="kpi-ap-completed">—</span>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">Concluídos</span>
+                    </a>
+                </div>
+
+                <!-- Atalhos Rápidos -->
+                <div class="space-y-4">
+                    <h2 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Atalhos Rápidos</h2>
+                    <div class="flex overflow-x-auto pb-2 gap-4 no-scrollbar">
+                        <a href="/parametrizar-matrizes" class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group">
+                            <div class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined text-xl">grid_view</span>
                             </div>
                             <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">Matrizes</span>
                         </a>
-                        <!-- outros atalhos -->
-                        <a class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group"
-                            href="/escopo-testes">
-                            <div
-                                class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary dark:text-indigo-300 group-hover:scale-110 transition-transform">
+                        <a href="/escopo-testes" class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group">
+                            <div class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined text-xl">language</span>
                             </div>
                             <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">Escopo</span>
                         </a>
-                        <a class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group"
-                            href="/planejamento">
-                            <div
-                                class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary dark:text-indigo-300 group-hover:scale-110 transition-transform">
+                        <a href="/planejamento" class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group">
+                            <div class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined text-xl">event_available</span>
                             </div>
-                            <span
-                                class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">Planejamento</span>
+                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">Planejamento</span>
                         </a>
-                        <a class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group"
-                            href="/execucao">
-                            <div
-                                class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary dark:text-indigo-300 group-hover:scale-110 transition-transform">
+                        <a href="/execucao" class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group">
+                            <div class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined text-xl">play_circle</span>
                             </div>
                             <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">Execução</span>
                         </a>
-                        <a class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group"
-                            href="/dashboards">
-                            <div
-                                class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary dark:text-indigo-300 group-hover:scale-110 transition-transform">
+                        <a href="/dashboards" class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group">
+                            <div class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                                 <span class="material-symbols-outlined text-xl">monitoring</span>
                             </div>
-                            <span
-                                class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">Dashboards</span>
+                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">Dashboards</span>
                         </a>
-                        <a class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group"
-                            href="#">
-                            <div
-                                class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary dark:text-indigo-300 group-hover:scale-110 transition-transform">
-                                <span class="material-symbols-outlined text-xl">psychology</span>
+                        <a href="/gestao-usuarios" class="flex-shrink-0 flex items-center gap-4 bg-white dark:bg-slate-800 px-6 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/50 transition-all group">
+                            <div class="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                <span class="material-symbols-outlined text-xl">manage_accounts</span>
                             </div>
-                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">IA Atlas</span>
+                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 pr-2">Gestão</span>
                         </a>
                     </div>
                 </div>
 
-                <div
-                    class="bg-surface-light dark:bg-surface-dark rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none overflow-hidden">
-                    <div
-                        class="px-10 py-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <!-- Pendências -->
+                <div class="bg-surface-light dark:bg-surface-dark rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800 shadow-xl overflow-hidden">
+                    <div class="px-10 py-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Pendências Críticas</h2>
-                            <p class="text-sm text-slate-400 mt-1 font-medium">Testes com prazo de vencimento expirado
-                            </p>
+                            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Pendências — Testes a Executar</h2>
+                            <p class="text-sm text-slate-400 mt-1 font-medium">Ordenados por nível de risco (maior prioridade primeiro)</p>
                         </div>
-                        <button
+                        <a href="/planejamento"
                             class="bg-primary hover:bg-blue-700 text-white text-[11px] font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20 uppercase tracking-widest">
-                            Visualizar Tudo
-                        </button>
+                            Ver Planejamento
+                        </a>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-slate-50/50 dark:bg-slate-800/30">
-                                    <th
-                                        class="px-10 py-5 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">
-                                        Teste</th>
-                                    <th
-                                        class="px-10 py-5 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">
-                                        Matriz</th>
-                                    <th
-                                        class="px-10 py-5 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">
-                                        Vencimento</th>
-                                    <th
-                                        class="px-10 py-5 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">
-                                        Prioridade</th>
-                                    <th
-                                        class="px-10 py-5 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] text-right">
-                                        Ação</th>
+                                    <th class="px-10 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">Teste / Diretoria</th>
+                                    <th class="px-10 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">Área</th>
+                                    <th class="px-10 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">Competência</th>
+                                    <th class="px-10 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">Risco</th>
+                                    <th class="px-10 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] text-right">Ação</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                                <tr class="hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition-colors">
+                            <tbody id="pendencias-tbody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                                <tr>
                                     <td class="px-10 py-16 text-center" colspan="5">
                                         <div class="flex flex-col items-center gap-3 opacity-30">
-                                            <span class="material-symbols-outlined text-4xl">inventory_2</span>
-                                            <p class="text-sm font-medium italic">Nenhuma pendência encontrada no
-                                                momento.</p>
+                                            <span class="material-symbols-outlined text-4xl">hourglass_empty</span>
+                                            <p class="text-sm font-medium italic">Carregando dados...</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -247,16 +210,16 @@
                     </div>
                 </div>
 
-                <footer class="text-center pt-8 pb-12">
+                <footer class="text-center pt-4 pb-10">
                     <p class="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-[0.3em]">
-                        © 2024 Nomos Executive Platform • Todos os Direitos Reservados
+                        © 2025 Nomos Executive Platform • Todos os Direitos Reservados
                     </p>
                 </footer>
             </div>
         </main>
     </div>
 
-    <!-- Scripts -->
+    <script src="/js/nomos-common.js"></script>
     <script src="/js/home.js"></script>
 </body>
 

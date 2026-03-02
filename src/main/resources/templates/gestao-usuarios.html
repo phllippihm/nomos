@@ -76,7 +76,7 @@
                                 <tr>
                                     <th class="px-8 py-5">Empresa</th>
                                     <th class="px-8 py-5">CNPJ</th>
-                                    <th class="px-8 py-5">Cadastro</th>
+                                    <th class="px-8 py-5">Status</th>
                                     <th class="px-8 py-5 text-right">Ações</th>
                                 </tr>
                             </thead>
@@ -121,13 +121,19 @@
                         <div
                             class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200/60 dark:border-slate-700 shadow-sm flex flex-col h-[500px]">
                             <h2 class="font-extrabold text-slate-900 dark:text-white mb-4 text-sm">Áreas</h2>
-                            <div class="flex gap-2 mb-4">
-                                <input type="text" id="new-area" placeholder="Nova área..."
-                                    class="flex-1 p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20" />
-                                <button onclick="addOrgItem('area')"
-                                    class="bg-primary text-white p-2.5 rounded-lg hover:bg-blue-700 transition-all">
-                                    <span class="material-symbols-outlined text-lg">add</span>
-                                </button>
+                            <div class="flex flex-col gap-2 mb-4">
+                                <select id="new-area-diretoria"
+                                    class="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20">
+                                    <option value="">Diretoria...</option>
+                                </select>
+                                <div class="flex gap-2">
+                                    <input type="text" id="new-area" placeholder="Nova área..."
+                                        class="flex-1 p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500/20" />
+                                    <button onclick="addOrgItem('area')"
+                                        class="bg-primary text-white p-2.5 rounded-lg hover:bg-blue-700 transition-all">
+                                        <span class="material-symbols-outlined text-lg">add</span>
+                                    </button>
+                                </div>
                             </div>
                             <div id="list-areas" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
                         </div>
@@ -222,41 +228,22 @@
             <div class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nome
-                            Completo</label>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nome Completo</label>
                         <input type="text" id="usr-name"
                             class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" />
                     </div>
                     <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">E-mail
-                            (Login)</label>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">E-mail (Login)</label>
                         <input type="email" id="usr-email"
                             class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" />
                     </div>
                 </div>
                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Empresa
-                        Vinculada</label>
-                    <select id="usr-empresaId" onchange="loadUserOrgOptions()"
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Empresa Vinculada</label>
+                    <select id="usr-empresaId"
                         class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20">
                         <option value="">Escolher Empresa...</option>
                     </select>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Diretoria</label>
-                        <select id="usr-diretoria"
-                            class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20">
-                            <option value="">Escolher...</option>
-                        </select>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Área</label>
-                        <select id="usr-area"
-                            class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20">
-                            <option value="">Escolher...</option>
-                        </select>
-                    </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1">
@@ -265,21 +252,22 @@
                             class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" />
                     </div>
                     <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Perfil de
-                            Acesso</label>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Perfil de Acesso</label>
                         <select id="usr-role"
                             class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20">
-                            <option value="Master">Master</option>
-                            <option value="Controller">Controller</option>
-                            <option value="Visualizador" selected>Visualizador</option>
+                            <option value="ADMIN">Master</option>
+                            <option value="CONTROLLER">Controller</option>
+                            <option value="USER" selected>Visualizador</option>
                         </select>
                     </div>
                 </div>
+                <p id="usr-senha-hint" class="text-[10px] text-slate-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-3 py-2">
+                    Senha padrão: <strong>Nomos@2024</strong> — o usuário poderá alterá-la depois.
+                </p>
                 <input type="hidden" id="usr-id" />
                 <div class="pt-4 space-y-2">
                     <button onclick="saveUser()"
-                        class="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition-all">Salvar
-                        Usuário</button>
+                        class="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition-all">Salvar Usuário</button>
                     <button onclick="closeUserModal()"
                         class="w-full py-4 text-slate-400 font-bold hover:text-slate-600 transition-all">Cancelar</button>
                 </div>

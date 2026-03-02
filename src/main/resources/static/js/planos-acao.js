@@ -63,8 +63,29 @@ function getUserSelectOptions() {
 }
 
 // ====================== CREATION FORM ======================
-function showCreationForm() {
+async function showCreationForm() {
     document.getElementById('creation-form')?.classList.remove('hidden');
+
+    const execSelect = document.getElementById('creation-execution');
+    if (!execSelect) return;
+
+    execSelect.innerHTML = '<option value="">Carregando execuções...</option>';
+    try {
+        const executions = await apiFetch('/test/executions');
+        if (!executions || executions.length === 0) {
+            execSelect.innerHTML = '<option value="">Nenhuma execução disponível</option>';
+        } else {
+            execSelect.innerHTML = '<option value="">Nenhuma (plano independente)</option>' +
+                executions.map(e => {
+                    const pct = e.conformityPercentage != null ? ` — ${e.conformityPercentage}%` : '';
+                    const date = e.date ? ` (${e.date})` : '';
+                    return `<option value="${e.id}">${e.testName} · ${e.area}${pct}${date}</option>`;
+                }).join('');
+        }
+    } catch (err) {
+        execSelect.innerHTML = '<option value="">Erro ao carregar execuções</option>';
+        console.error('Erro ao carregar execuções:', err);
+    }
 }
 
 function addStep() {

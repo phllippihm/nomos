@@ -14,9 +14,13 @@ async function init() {
         return;
     }
 
-    // Load matrix config (still from localStorage for now, but per institution)
-    const mc = localStorage.getItem('nomos_matrix_config');
-    if (mc) matrixConfig = JSON.parse(mc);
+    // Load matrix config from API
+    try {
+        const data = await apiFetch(`/matrix-config/${currentUser.institutionId}`);
+        if (data && typeof data === 'object') matrixConfig = data;
+    } catch (matrixErr) {
+        console.warn('[Nomos] Não foi possível carregar configuração da matriz:', matrixErr);
+    }
 
     // Check if incoming test from Planejamento
     const incoming = localStorage.getItem('nomos_test_to_execute');

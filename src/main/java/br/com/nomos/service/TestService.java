@@ -137,6 +137,13 @@ public class TestService {
 
     @Transactional
     public void deleteScopeItem(UUID id) {
+        // Delete action plans linked to execution records of this scope item first
+        List<UUID> executionIds = executionRecordRepository.findByScopeItemId(id)
+                .stream().map(ExecutionRecord::getId).toList();
+        if (!executionIds.isEmpty()) {
+            List<ActionPlan> linkedPlans = actionPlanRepository.findByExecutionRecord_IdIn(executionIds);
+            actionPlanRepository.deleteAll(linkedPlans);
+        }
         planningItemRepository.deleteByScopeItemId(id);
         executionRecordRepository.deleteByScopeItemId(id);
         scopeItemRepository.deleteById(id);
@@ -147,6 +154,11 @@ public class TestService {
         return executionRecordRepository.findAll().stream()
                 .filter(e -> e.getScopeItem().getId().equals(scopeItemId))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExecutionRecord> listAllExecutions() {
+        return executionRecordRepository.findAll();
     }
 
     @Transactional
@@ -235,7 +247,9 @@ public class TestService {
 
                     String conformityLevel = null;
                     String conformityColor = null;
-                    if (compliance != null) {
+                    if (compliance != null && p.getScopeItem().getArea() != null
+                            && p.getScopeItem().getArea().getDirectorate() != null
+                            && p.getScopeItem().getArea().getDirectorate().getInstitution() != null) {
                         UUID instId = p.getScopeItem().getArea().getDirectorate().getInstitution().getId();
                         var result = matrixConfigService.resolveComplianceLabel(
                                 instId, java.math.BigDecimal.valueOf(compliance));

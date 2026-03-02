@@ -3,6 +3,7 @@ package br.com.nomos.controller.api;
 import br.com.nomos.domain.test.ExecutionRecord;
 import br.com.nomos.dto.test.ExecutionRecordDTO;
 import br.com.nomos.dto.test.ExecutionRecordRequestDTO;
+import br.com.nomos.dto.test.ExecutionSummaryDTO;
 import br.com.nomos.dto.test.PlanningItemDTO;
 import br.com.nomos.dto.test.ScopeItemDTO;
 import br.com.nomos.dto.test.ScopeItemRequestDTO;
@@ -71,6 +72,20 @@ public class TestController {
                                 .toList();
         }
 
+        @GetMapping("/executions")
+        public List<ExecutionSummaryDTO> listAllExecutions() {
+                return testService.listAllExecutions().stream()
+                                .map(e -> new ExecutionSummaryDTO(
+                                                e.getId(),
+                                                e.getScopeItem().getNome(),
+                                                e.getScopeItem().getArea().getNome(),
+                                                e.getTestDate() != null
+                                                                ? e.getTestDate().toLocalDate().toString()
+                                                                : null,
+                                                e.getConformityPercentage()))
+                                .toList();
+        }
+
         @GetMapping("/planning")
         public List<PlanningItemDTO> listPlanning() {
                 return testService.listPlanningItems();
@@ -99,7 +114,9 @@ public class TestController {
                 String priorityAction = null;
 
                 if (e.getConformityPercentage() != null && e.getScopeItem() != null
-                                && e.getScopeItem().getArea() != null) {
+                                && e.getScopeItem().getArea() != null
+                                && e.getScopeItem().getArea().getDirectorate() != null
+                                && e.getScopeItem().getArea().getDirectorate().getInstitution() != null) {
                         UUID institutionId = e.getScopeItem().getArea().getDirectorate().getInstitution().getId();
 
                         var compliance = matrixConfigService.resolveComplianceLabel(
@@ -118,7 +135,7 @@ public class TestController {
 
                 return new ExecutionRecordDTO(
                                 e.getId(),
-                                e.getScopeItem().getId(),
+                                e.getScopeItem() != null ? e.getScopeItem().getId() : null,
                                 e.getTestDate(),
                                 e.getResponsible(),
                                 e.getSampleSize(),

@@ -2,6 +2,7 @@ package br.com.nomos.controller.api;
 
 import br.com.nomos.dto.dashboard.ActionPlansOverviewDTO;
 import br.com.nomos.dto.dashboard.ComplianceDashboardDTO;
+import br.com.nomos.dto.dashboard.HomeSummaryDTO;
 import br.com.nomos.service.dashboard.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +25,11 @@ public class DashboardController {
             @RequestParam(required = false) UUID directorateId,
             @RequestParam(required = false) UUID areaId) {
         return dashboardService.getComplianceStats(institutionId, directorateId, areaId);
+    }
+
+    @GetMapping("/home")
+    public HomeSummaryDTO getHomeSummary(@RequestParam UUID institutionId) {
+        return dashboardService.getHomeSummary(institutionId);
     }
 
     @GetMapping("/action-plans")
