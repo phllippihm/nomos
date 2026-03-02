@@ -13,6 +13,7 @@ let riskValues = {};
 
 let internalDirectorates = [];
 let internalAreas = [];
+let costCenters = [];
 
 async function init() {
     if (!currentUser.institutionId) {
@@ -32,9 +33,11 @@ async function init() {
 
         // Load Organizational Structure
         internalDirectorates = await apiFetch(`/organization/institutions/${currentUser.institutionId}/directorates`);
+        costCenters = await apiFetch(`/organization/institutions/${currentUser.institutionId}/cost-centers`) || [];
 
         // Populate selects
         populateOrgSelects();
+        populateCostCenterSelect();
         populateMonthSelects();
         renderRiskSliders();
         renderScopesList();
@@ -66,6 +69,13 @@ async function populateOrgSelects() {
             console.error('Error fetching areas:', e);
         }
     };
+}
+
+function populateCostCenterSelect() {
+    const ccSelect = document.getElementById('frm-centroCusto');
+    if (!ccSelect) return;
+    ccSelect.innerHTML = '<option value="">Nenhum</option>' +
+        costCenters.map(c => `<option value="${c.id}">${c.nome}${c.codigo ? ' (' + c.codigo + ')' : ''}</option>`).join('');
 }
 
 // Ensure init runs only after session is ready
@@ -189,6 +199,9 @@ function editScope(id) {
     document.getElementById('frm-periodicidade').value = s.periodicidade || 'Mensal';
     document.getElementById('frm-mesInicio').value = s.mesInicio || '';
     document.getElementById('frm-baseNormativa').value = s.baseNormativa || '';
+    document.getElementById('frm-procedimentos').value = s.procedimentos || '';
+    const ccSelect = document.getElementById('frm-centroCusto');
+    if (ccSelect) ccSelect.value = s.costCenterId || '';
 
     const riskDims = matrixState && matrixState.riskDimensions ? matrixState.riskDimensions : [];
     if (riskDims.length > 0) {
@@ -224,6 +237,8 @@ async function handleSave(generateCalendar) {
     const probabilidade = riskDims.length > 0 ? (riskValues[riskDims[0].id] || 1) : 1;
     const impacto = riskDims.length > 1 ? (riskValues[riskDims[1].id] || 1) : 1;
 
+    const costCenterId = document.getElementById('frm-centroCusto')?.value || null;
+
     const scopeData = {
         nome: teste,
         finalidade: document.getElementById('frm-finalidade').value,
@@ -233,7 +248,9 @@ async function handleSave(generateCalendar) {
         baseNormativa: document.getElementById('frm-baseNormativa').value || '',
         probabilidade: parseInt(probabilidade),
         impacto: parseInt(impacto),
-        areaId: areaId
+        areaId: areaId,
+        procedimentos: document.getElementById('frm-procedimentos')?.value || '',
+        costCenterId: costCenterId || null
     };
 
     try {
@@ -283,6 +300,9 @@ function resetForm() {
     document.getElementById('frm-mesInicio').value = '';
     document.getElementById('frm-finalidade').value = '';
     document.getElementById('frm-baseNormativa').value = '';
+    document.getElementById('frm-procedimentos').value = '';
+    const ccSelect = document.getElementById('frm-centroCusto');
+    if (ccSelect) ccSelect.value = '';
     renderRiskSliders();
     renderMonthsGrid();
 }

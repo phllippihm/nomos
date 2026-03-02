@@ -13,5 +13,7 @@ public record PlanningItemDTO(
                 Integer ano,
                 String status,
                 String responsavel,
-                Double compliance) {
+                Double compliance,
+                String conformityLevel,
+                String conformityColor) {
 }

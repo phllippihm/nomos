@@ -15,5 +15,8 @@ public record ScopeItemDTO(
         Integer impacto,
         Integer riskScore,
         RiskLevel riskLevel,
-        UUID areaId) {
+        UUID areaId,
+        String procedimentos,
+        UUID costCenterId,
+        String costCenterName) {
 }

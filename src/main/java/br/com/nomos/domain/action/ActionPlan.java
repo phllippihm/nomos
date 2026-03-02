@@ -23,7 +23,7 @@ public class ActionPlan {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "execution_id", nullable = false)
+    @JoinColumn(name = "execution_id")
     private ExecutionRecord executionRecord;
 
     @Column(columnDefinition = "TEXT")
@@ -51,6 +51,14 @@ public class ActionPlan {
         this.executionRecord = executionRecord;
         this.description = description;
         this.status = "DRAFT";
+        this.createdAt = LocalDateTime.now();
+        this.createdBy = createdBy;
+    }
+
+    public ActionPlan(String description, String createdBy) {
+        this.executionRecord = null;
+        this.description = description;
+        this.status = "ACTIVE";
         this.createdAt = LocalDateTime.now();
         this.createdBy = createdBy;
     }

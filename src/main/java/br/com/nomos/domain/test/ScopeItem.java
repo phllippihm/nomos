@@ -1,6 +1,7 @@
 package br.com.nomos.domain.test;
 
 import br.com.nomos.domain.organization.Area;
+import br.com.nomos.domain.organization.CostCenter;
 import br.com.nomos.domain.risk.RiskLevel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -65,9 +66,16 @@ public class ScopeItem {
     @Column(name = "risk_level")
     private RiskLevel riskLevel;
 
+    @Column(name = "procedimentos", columnDefinition = "TEXT")
+    private String procedimentos;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "area_id", nullable = false)
     private Area area;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cost_center_id")
+    private CostCenter costCenter;
 
     public ScopeItem(String nome, String finalidade, Area area, String periodicidade, String mesInicio,
             String baseNormativa,

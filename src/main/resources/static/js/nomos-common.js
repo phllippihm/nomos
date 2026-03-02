@@ -149,3 +149,29 @@ async function apiFetch(endpoint, options = {}) {
         throw error;
     }
 }
+
+/**
+ * Upload files via multipart/form-data (no Content-Type header — browser sets boundary).
+ */
+async function apiUpload(endpoint, formData) {
+    const API_BASE = '/api';
+    try {
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        });
+        if (response.status === 401 || response.status === 403) {
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+            return;
+        }
+        if (!response.ok) throw new Error(`Erro: ${response.status}`);
+        if (response.status === 204) return null;
+        return await response.json();
+    } catch (error) {
+        console.error(`[Nomos] API Upload Error (${endpoint}):`, error);
+        throw error;
+    }
+}

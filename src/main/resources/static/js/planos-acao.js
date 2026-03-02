@@ -7,6 +7,16 @@ let actionPlans = [];
 let pendingSteps = [];
 let incomingExecution = null;
 let activePlanId = null;
+let institutionUsers = [];
+
+/**
+ * Downloads an attachment by navigating to the public download endpoint.
+ * The endpoint is public (no auth required), so a simple redirect works.
+ * The server sets Content-Disposition header to force the correct filename.
+ */
+function downloadAttachment(attachmentId, fileName) {
+    window.location.href = `/api/action-plans/attachments/${attachmentId}/download`;
+}
 
 async function init() {
     if (!currentUser.institutionId) {
@@ -14,6 +24,7 @@ async function init() {
         return;
     }
 
+    await loadUsers();
     await loadPlans();
 
     // Check if viewing specific plan via query param
@@ -36,14 +47,24 @@ async function loadPlans() {
 
 document.addEventListener('nomos:sessionReady', init);
 
+async function loadUsers() {
+    if (!currentUser.institutionId) return;
+    try {
+        institutionUsers = await apiFetch(`/users?institutionId=${currentUser.institutionId}`);
+    } catch (e) {
+        console.error('Erro ao carregar usuários:', e);
+        institutionUsers = [];
+    }
+}
+
+function getUserSelectOptions() {
+    return '<option value="">Selecionar responsável...</option>' +
+        institutionUsers.map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
+}
+
 // ====================== CREATION FORM ======================
 function showCreationForm() {
     document.getElementById('creation-form')?.classList.remove('hidden');
-    const infoEl = document.getElementById('creation-exec-info');
-    if (infoEl && incomingExecution) {
-        infoEl.textContent =
-            `${incomingExecution.testName} — ${incomingExecution.area || ''} — Conformidade: ${(incomingExecution.compliance || 0).toFixed(1)}% — Ação: ${incomingExecution.maintenanceAction || 'N/A'}`;
-    }
 }
 
 function addStep() {
@@ -89,23 +110,36 @@ function renderStepsPreview() {
 
 async function createPlan() {
     const desc = document.getElementById('creation-desc')?.value.trim();
-    if (!desc) { alert('Preencha a descrição do plano.'); return; }
-    if (pendingSteps.length === 0) { alert('Adicione ao menos uma etapa.'); return; }
+    if (!desc) { showToast('Preencha a descrição do plano.'); return; }
 
-    // In the new flow, if we have an incoming execution, the ActionPlan (DRAFT) is likely already created by TestService.
-    // If we are creating from scratch without a DRAFT plan, we need a new endpoint.
-    // For now, let's assume we are updating a DRAFT plan to ACTIVE if activePlanId is set,
-    // OR we are mocking the creation if this form is still used.
+    const executionId = document.getElementById('creation-execution')?.value || null;
 
-    // Simplification for the migration: This generic creation form might need to target a specific /api endpoint.
-    // If incomingExecution has an action plan ID (not currently mapped), we would PUT to it.
-    // For now, if we are editing a draft, we use openPlanDetail which has its own edit flow.
-    // If the creation form is for "standalone" plans, we need POST /api/action-plans (Backend doesn't have it yet).
-    // => Workaround: Hide this standalone form since GRC loop auto-generates drafts.
+    const dto = {
+        description: desc,
+        executionId: executionId || null,
+        steps: pendingSteps.map(s => ({
+            description: s.description,
+            responsibleId: s.responsibleId || null,
+            responsible: s.responsible,
+            deadline: s.deadline || ''
+        }))
+    };
 
-    alert('Por favor, edite os planos de ação gerados automaticamente na lista de planos ativos.');
-    document.getElementById('creation-form')?.classList.add('hidden');
-    pendingSteps = [];
+    try {
+        const plan = await apiFetch('/action-plans', {
+            method: 'POST',
+            body: JSON.stringify(dto)
+        });
+        showToast('Plano criado com sucesso!');
+        document.getElementById('creation-form')?.classList.add('hidden');
+        document.getElementById('creation-desc').value = '';
+        pendingSteps = [];
+        await loadPlans();
+        openPlanDetail(plan.id);
+    } catch (e) {
+        showToast('Erro ao criar plano.');
+        console.error(e);
+    }
 }
 
 // ====================== PLAN DETAIL ======================
@@ -144,40 +178,39 @@ function openPlanDetail(planId) {
         }
     }
 
-    // Setup generic step add button in detail view
-    const detailFormContainer = document.getElementById('detail-step-form');
-    // If not exists we can inject one or reuse the logic
-    // For now, assuming UI logic allows adding steps inside detail or we reuse showCreationForm logic
-    // We will inject a lightweight step adder at the bottom of steps list.
+    // Setup step adder in detail view — recreate each time to avoid stale plan ID
     const stepsContainer = document.getElementById('detail-steps').parentElement;
-    if (!document.getElementById('inline-step-adder')) {
-        const adder = document.createElement('div');
-        adder.id = 'inline-step-adder';
-        adder.className = 'mt-4 flex gap-2 items-end';
-        adder.innerHTML = `
-            <div class="flex-1">
-                <input type="text" id="inline-step-desc" placeholder="Nova etapa (O que fazer)" class="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-1 focus:ring-primary focus:border-primary transition-all">
-            </div>
-            <div class="w-24">
-                <input type="text" id="inline-step-resp" placeholder="Resp." class="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-1 focus:ring-primary focus:border-primary transition-all">
-            </div>
-            <div class="w-28">
-                <input type="date" id="inline-step-deadline" class="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-1 focus:ring-primary focus:border-primary transition-all">
-            </div>
-            <button onclick="addStepAPI('${plan.id}')" class="bg-primary text-white p-2 rounded-lg hover:bg-blue-600 transition-colors">
-                <span class="material-symbols-outlined text-sm">add</span>
-            </button>
-        `;
-        stepsContainer.appendChild(adder);
-    }
+    const existingAdder = document.getElementById('inline-step-adder');
+    if (existingAdder) existingAdder.remove();
+
+    const adder = document.createElement('div');
+    adder.id = 'inline-step-adder';
+    adder.className = 'mt-4 flex gap-2 items-end';
+    adder.innerHTML = `
+        <div class="flex-1">
+            <input type="text" id="inline-step-desc" placeholder="Nova etapa (O que fazer)" class="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+        </div>
+        <div class="w-32">
+            <select id="inline-step-resp" class="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                ${getUserSelectOptions()}
+            </select>
+        </div>
+        <div class="w-28">
+            <input type="date" id="inline-step-deadline" class="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+        </div>
+        <button onclick="addStepAPI('${plan.id}')" class="bg-primary text-white p-2 rounded-lg hover:bg-blue-600 transition-colors">
+            <span class="material-symbols-outlined text-sm">add</span>
+        </button>
+    `;
+    stepsContainer.appendChild(adder);
 
     // Toggle adder visibility based on plan status
-    const adder = document.getElementById('inline-step-adder');
-    if (adder) {
+    const adderEl = document.getElementById('inline-step-adder');
+    if (adderEl) {
         if (plan.status === 'COMPLETED') {
-            adder.classList.add('hidden');
+            adderEl.classList.add('hidden');
         } else {
-            adder.classList.remove('hidden');
+            adderEl.classList.remove('hidden');
         }
     }
 
@@ -239,9 +272,15 @@ async function addStepAPI(planId) {
     const desc = descInput?.value.trim();
     if (!desc) { showToast('Informe a descrição da etapa.'); return; }
 
+    const selectedUserId = respInput?.value || null;
+    const selectedUserName = selectedUserId
+        ? institutionUsers.find(u => u.id === selectedUserId)?.nome || ''
+        : '';
+
     const dto = {
         description: desc,
-        responsible: respInput?.value.trim() || '',
+        responsible: selectedUserName,
+        responsibleId: selectedUserId,
         deadline: deadlineInput?.value || ''
     };
 
@@ -297,34 +336,74 @@ function renderDetailMessages(plan) {
     const container = document.getElementById('detail-messages');
     if (!container) return;
     container.innerHTML = plan.messages.map(m => {
-        if (m.type === 'system') {
+        if (m.type === 'SYSTEM') {
             return `<div class="text-center"><span class="text-[9px] text-slate-400 bg-slate-50 dark:bg-slate-900 px-3 py-1 rounded-full">${m.text} · ${m.date}</span></div>`;
         }
-        const isMe = m.userId === currentUser.id;
+        const attachmentsHtml = m.attachments && m.attachments.length > 0
+            ? `<div class="mt-1.5 space-y-1">${m.attachments.map(a =>
+                `<button onclick="downloadAttachment('${a.id}', '${a.fileName}')"
+                    class="flex items-center gap-1 text-[10px] underline opacity-80 hover:opacity-100 text-left cursor-pointer bg-transparent border-none p-0">
+                    <span class="material-symbols-outlined text-xs">download</span>${a.fileName}
+                </button>`).join('')}</div>`
+            : '';
         return `
-            <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
-                <div class="${isMe ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200'} px-4 py-2.5 rounded-2xl max-w-[80%]">
-                    <p class="text-[9px] font-bold ${isMe ? 'text-blue-200' : 'text-slate-400'} mb-0.5">${m.userName}</p>
+            <div class="flex justify-start">
+                <div class="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2.5 rounded-2xl max-w-[80%]">
+                    <p class="text-[9px] font-bold text-slate-400 mb-0.5">${m.userName}</p>
                     <p class="text-xs">${m.text}</p>
-                    <p class="text-[8px] ${isMe ? 'text-blue-300' : 'text-slate-400'} mt-1">${m.date}</p>
+                    ${attachmentsHtml}
+                    <p class="text-[8px] text-slate-400 mt-1">${m.date}</p>
                 </div>
             </div>`;
     }).join('');
     container.scrollTop = container.scrollHeight;
 }
 
+function previewAttachments() {
+    const fileInput = document.getElementById('msg-files');
+    const preview = document.getElementById('attachment-preview');
+    if (!fileInput || !preview) return;
+    if (fileInput.files.length === 0) {
+        preview.classList.add('hidden');
+        preview.innerHTML = '';
+        return;
+    }
+    preview.classList.remove('hidden');
+    preview.innerHTML = Array.from(fileInput.files).map(f =>
+        `<span class="text-[10px] bg-blue-50 text-primary px-2 py-1 rounded-lg border border-blue-100 flex items-center gap-1">
+            <span class="material-symbols-outlined text-xs">description</span>${f.name}
+        </span>`
+    ).join('');
+}
+
 async function sendMessage() {
     const input = document.getElementById('msg-input');
-    if (!input) return;
+    const fileInput = document.getElementById('msg-files');
+    if (!input || !activePlanId) return;
+
     const text = input.value.trim();
-    if (!text || !activePlanId) return;
+    const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
+
+    if (!text && !hasFiles) return;
 
     try {
-        await apiFetch(`/action-plans/${activePlanId}/messages`, {
-            method: 'POST',
-            body: JSON.stringify({ text })
-        });
+        if (hasFiles) {
+            const formData = new FormData();
+            formData.append('text', text || '(anexo)');
+            for (const file of fileInput.files) {
+                formData.append('files', file);
+            }
+            await apiUpload(`/action-plans/${activePlanId}/messages/with-attachments`, formData);
+        } else {
+            await apiFetch(`/action-plans/${activePlanId}/messages`, {
+                method: 'POST',
+                body: JSON.stringify({ text })
+            });
+        }
         input.value = '';
+        if (fileInput) fileInput.value = '';
+        const preview = document.getElementById('attachment-preview');
+        if (preview) { preview.classList.add('hidden'); preview.innerHTML = ''; }
         await refreshPlanDetail(activePlanId);
     } catch (e) {
         showToast('Erro ao enviar mensagem.');

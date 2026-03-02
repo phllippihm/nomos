@@ -47,7 +47,7 @@
                         <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Parametrização
                             de Matrizes</h1>
                         <p class="text-slate-500 dark:text-slate-400 mt-1">Configurações para a unidade: <strong
-                                class="text-slate-900 dark:text-white">Global</strong></p>
+                                id="institution-name" class="text-slate-900 dark:text-white">Carregando...</strong></p>
                     </div>
                     <div class="bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl flex space-x-1 shadow-inner">
                         <button onclick="switchMatrixTab('risk')" id="tab-risk"
@@ -64,6 +64,11 @@
                             <span class="material-symbols-outlined text-base align-middle mr-1">build</span>Manutenção
                         </button>
                     </div>
+                    <button onclick="resetState()"
+                        class="flex items-center gap-2 px-4 py-2 text-[10px] font-bold text-slate-400 hover:text-red-500 transition-colors uppercase border border-slate-200 dark:border-slate-800 rounded-lg">
+                        <span class="material-symbols-outlined text-sm">restart_alt</span>
+                        Restaurar Padrões
+                    </button>
                 </div>
 
                 <!-- ========== RISK TAB ========== -->
@@ -249,7 +254,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/js/parametrizar-matrizes.js"></script>
+    <script th:src="@{/js/parametrizar-matrizes.js}" defer></script>
 </body>
 
 </html>

@@ -28,21 +28,15 @@ public class SecurityConfigurations {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        // Recursos estáticos do Thymeleaf / Frontend
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico").permitAll()
-                        // Rotas públicas (Registro e Login Web/API)
+                        // ROTA PÚBLICA PARA DOWNLOAD
+                        .requestMatchers(HttpMethod.GET, "/api/action-plans/attachments/*/download").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/").permitAll()
-
-                        // Rotas baseadas em ROLE
-                        // .requestMatchers(HttpMethod.POST, "/alguma-rota-admin").hasRole("ADMIN")
-
-                        // Qualquer outra requisição precisará estar autenticada
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
-                // Redirecionamento customizado quando não autenticado tentar acessar rota
-                // protegida (ex: /home)
                 .exceptionHandling(exceptionHandling -> exceptionHandling
                         .authenticationEntryPoint(
                                 (request, response, authException) -> response.sendRedirect("/login")))

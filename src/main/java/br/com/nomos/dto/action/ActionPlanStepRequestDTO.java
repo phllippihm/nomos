@@ -6,5 +6,6 @@ import java.util.UUID;
 public record ActionPlanStepRequestDTO(
         @NotBlank(message = "Description is mandatory") String description,
         String responsible,
+        UUID responsibleId,
         String deadline) {
 }

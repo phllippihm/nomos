@@ -1,9 +1,11 @@
 package br.com.nomos.service;
 
 import br.com.nomos.domain.organization.Area;
+import br.com.nomos.domain.organization.CostCenter;
 import br.com.nomos.domain.organization.Directorate;
 import br.com.nomos.domain.organization.Institution;
 import br.com.nomos.repository.organization.AreaRepository;
+import br.com.nomos.repository.organization.CostCenterRepository;
 import br.com.nomos.repository.organization.DirectorateRepository;
 import br.com.nomos.repository.organization.InstitutionRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class OrganizationService {
     private final InstitutionRepository institutionRepository;
     private final DirectorateRepository directorateRepository;
     private final AreaRepository areaRepository;
+    private final CostCenterRepository costCenterRepository;
 
     @Transactional(readOnly = true)
     public List<Institution> listInstitutions() {
@@ -57,5 +60,17 @@ public class OrganizationService {
         Directorate directorate = directorateRepository.findById(directorateId)
                 .orElseThrow(() -> new RuntimeException("Diretoria não encontrada"));
         return areaRepository.save(new Area(nome, directorate));
+    }
+
+    @Transactional(readOnly = true)
+    public List<CostCenter> listCostCentersByInstitution(UUID institutionId) {
+        return costCenterRepository.findByInstitutionId(institutionId);
+    }
+
+    @Transactional
+    public CostCenter createCostCenter(String nome, String codigo, UUID institutionId) {
+        Institution institution = institutionRepository.findById(institutionId)
+                .orElseThrow(() -> new RuntimeException("Instituição não encontrada"));
+        return costCenterRepository.save(new CostCenter(nome, codigo, institution));
     }
 }

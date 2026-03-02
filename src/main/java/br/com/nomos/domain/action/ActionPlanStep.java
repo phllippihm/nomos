@@ -1,8 +1,10 @@
 package br.com.nomos.domain.action;
 
+import br.com.nomos.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Table(name = "action_plan_steps")
@@ -28,13 +30,17 @@ public class ActionPlanStep {
     @Column
     private String responsible;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "responsible_id")
+    private User responsibleUser;
+
     @Column
-    private String deadline; // Can be improved to Date/LocalDate in the future
+    private LocalDate deadline;
 
     @Column(nullable = false)
     private boolean done = false;
 
-    public ActionPlanStep(ActionPlan actionPlan, String description, String responsible, String deadline) {
+    public ActionPlanStep(ActionPlan actionPlan, String description, String responsible, LocalDate deadline) {
         this.actionPlan = actionPlan;
         this.description = description;
         this.responsible = responsible;

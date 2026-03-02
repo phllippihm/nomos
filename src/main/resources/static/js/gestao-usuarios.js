@@ -123,7 +123,7 @@ function populateEmpresaSelects() {
     if (usrSelect) usrSelect.innerHTML = opts;
 }
 
-function renderEstrutura() {
+async function renderEstrutura() {
     const empId = document.getElementById('estrutura-empresa-select')?.value;
     if (!empId) {
         ['diretorias', 'areas', 'centrosCusto'].forEach(key => {
@@ -137,7 +137,18 @@ function renderEstrutura() {
     const org = estrutura[empId] || { diretorias: [], areas: [], centrosCusto: [] };
     renderOrgList('diretorias', org.diretorias, empId);
     renderOrgList('areas', org.areas, empId);
-    renderOrgList('centrosCusto', org.centrosCusto, empId);
+
+    // Cost centers from API if institutionId available
+    if (typeof apiFetch === 'function' && currentUser && currentUser.institutionId) {
+        try {
+            const apiCostCenters = await apiFetch(`/organization/institutions/${currentUser.institutionId}/cost-centers`);
+            renderCostCenterList(apiCostCenters || []);
+        } catch (e) {
+            renderOrgList('centrosCusto', org.centrosCusto, empId);
+        }
+    } else {
+        renderOrgList('centrosCusto', org.centrosCusto, empId);
+    }
 }
 
 function renderOrgList(key, items, empId) {
@@ -158,9 +169,45 @@ function renderOrgList(key, items, empId) {
     `).join('');
 }
 
-function addOrgItem(type) {
+function renderCostCenterList(items) {
+    const container = document.getElementById('list-centrosCusto');
+    if (!container) return;
+    if (items.length === 0) {
+        container.innerHTML = '<p class="text-center py-10 text-slate-300 text-xs font-bold uppercase">Nenhum item cadastrado</p>';
+        return;
+    }
+    container.innerHTML = items.map(item => `
+        <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl group hover:bg-slate-100 dark:hover:bg-slate-700/30 transition-all">
+            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${item.nome}${item.codigo ? ' (' + item.codigo + ')' : ''}</span>
+        </div>
+    `).join('');
+}
+
+async function addOrgItem(type) {
     const empId = document.getElementById('estrutura-empresa-select')?.value;
     if (!empId) { alert('Selecione uma empresa primeiro.'); return; }
+
+    // Cost centers use API
+    if (type === 'centroCusto') {
+        const input = document.getElementById('new-centroCusto');
+        if (!input) return;
+        const name = input.value.trim();
+        if (!name) return;
+        if (typeof apiFetch === 'function' && currentUser && currentUser.institutionId) {
+            try {
+                await apiFetch('/organization/cost-centers', {
+                    method: 'POST',
+                    body: JSON.stringify({ nome: name, codigo: '', institutionId: currentUser.institutionId })
+                });
+                input.value = '';
+                renderEstrutura();
+                showToast('Centro de custo adicionado!');
+            } catch (e) {
+                showToast('Erro ao adicionar centro de custo.');
+            }
+        }
+        return;
+    }
 
     const key = type === 'diretoria' ? 'diretorias' : type === 'area' ? 'areas' : 'centrosCusto';
     const input = document.getElementById('new-' + type);

@@ -10,8 +10,10 @@ import br.com.nomos.dto.test.PlanningItemDTO;
 import br.com.nomos.dto.test.ScopeItemRequestDTO;
 import br.com.nomos.repository.action.ActionPlanRepository;
 import br.com.nomos.repository.organization.AreaRepository;
+import br.com.nomos.repository.organization.CostCenterRepository;
 import br.com.nomos.repository.test.ExecutionRecordRepository;
 import br.com.nomos.repository.test.ScopeItemRepository;
+import br.com.nomos.service.risk.MatrixConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +35,9 @@ public class TestService {
     private final ExecutionRecordRepository executionRecordRepository;
     private final PlanningItemRepository planningItemRepository;
     private final AreaRepository areaRepository;
+    private final CostCenterRepository costCenterRepository;
     private final ActionPlanRepository actionPlanRepository;
+    private final MatrixConfigService matrixConfigService;
 
     private static final List<String> MESES = List.of(
             "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -59,6 +63,10 @@ public class TestService {
                 dto.probabilidade(),
                 dto.impacto());
         scopeItem.setTagArea(dto.tagArea());
+        scopeItem.setProcedimentos(dto.procedimentos());
+        if (dto.costCenterId() != null) {
+            scopeItem.setCostCenter(costCenterRepository.findById(dto.costCenterId()).orElse(null));
+        }
 
         return scopeItemRepository.save(scopeItem);
     }
@@ -113,8 +121,14 @@ public class TestService {
         scopeItem.setPeriodicidade(dto.periodicidade());
         scopeItem.setMesInicio(dto.mesInicio());
         scopeItem.setBaseNormativa(dto.baseNormativa());
+        scopeItem.setProcedimentos(dto.procedimentos());
         scopeItem.setProbabilidade(dto.probabilidade() != null ? dto.probabilidade() : 1);
         scopeItem.setImpacto(dto.impacto() != null ? dto.impacto() : 1);
+        if (dto.costCenterId() != null) {
+            scopeItem.setCostCenter(costCenterRepository.findById(dto.costCenterId()).orElse(null));
+        } else {
+            scopeItem.setCostCenter(null);
+        }
 
         scopeItem.updateRisk();
 
@@ -142,6 +156,11 @@ public class TestService {
         var planning = planningItemRepository.findById(dto.planningItemId())
                 .orElseThrow(() -> new IllegalArgumentException("PlanningItem não encontrado"));
 
+        if (dto.nonConforming() > dto.sampleSize()) {
+            throw new IllegalArgumentException(
+                    "A quantidade de não-conformes não pode ser maior que o tamanho da amostra");
+        }
+
         ExecutionRecord record = new ExecutionRecord();
         record.setScopeItem(scope);
         record.setPlanningItem(planning);
@@ -151,7 +170,6 @@ public class TestService {
         record.setNonConforming(dto.nonConforming());
         record.setConforming(dto.sampleSize() - dto.nonConforming());
         record.setNonConformities(dto.nonConformities());
-        record.setActionTaken(dto.actionTaken());
 
         if (dto.sampleSize() > 0) {
             double pc = ((dto.sampleSize() - dto.nonConforming()) / dto.sampleSize()) * 100.0;
@@ -159,19 +177,30 @@ public class TestService {
                     java.math.BigDecimal.valueOf(pc).setScale(2, java.math.RoundingMode.HALF_UP));
         }
 
+        // Resolve action from MatrixConfig (backend is source of truth)
+        String resolvedAction = null;
+        UUID institutionId = scope.getArea().getDirectorate().getInstitution().getId();
+        if (record.getConformityPercentage() != null && scope.getRiskLevel() != null) {
+            resolvedAction = matrixConfigService.resolveAction(
+                    institutionId, record.getConformityPercentage(), scope.getRiskLevel());
+        }
+        // Use resolved action, fall back to frontend-provided value
+        record.setActionTaken(resolvedAction != null ? resolvedAction : dto.actionTaken());
+
         // Update Planning Status
         planning.setStatus("Realizado");
         planningItemRepository.save(planning);
 
         ExecutionRecord savedRecord = executionRecordRepository.save(record);
 
-        // Action Plan Automation Trigger
-        if (dto.actionTaken() != null && !dto.actionTaken().isBlank() &&
-                !dto.actionTaken().equalsIgnoreCase("Nenhuma") &&
-                !dto.actionTaken().equalsIgnoreCase("Sem Acompanhamento")) {
+        // Action Plan Automation Trigger - only for actions that indicate remediation is needed
+        String effectiveAction = savedRecord.getActionTaken();
+        boolean requiresActionPlan = effectiveAction != null && !effectiveAction.isBlank()
+                && !effectiveAction.equalsIgnoreCase("Manutenção")
+                && !effectiveAction.equalsIgnoreCase("Nenhuma")
+                && !effectiveAction.equalsIgnoreCase("Sem Acompanhamento");
 
-            // Only create a new plan if no existing plan (DRAFT/ACTIVE) exists for this
-            // execution
+        if (requiresActionPlan) {
             boolean planAlreadyExists = actionPlanRepository.findAll().stream()
                     .anyMatch(p -> p.getExecutionRecord() != null
                             && p.getExecutionRecord().getId().equals(savedRecord.getId())
@@ -180,7 +209,8 @@ public class TestService {
             if (!planAlreadyExists) {
                 ActionPlan draftPlan = new ActionPlan(savedRecord, "", "Sistema");
                 draftPlan.addMessage(new ActionPlanMessage(draftPlan, "SYSTEM",
-                        "Plano de ação gerado automaticamente a partir de baixa conformidade no teste executado.",
+                        "Plano de ação gerado automaticamente a partir de baixa conformidade no teste executado. Ação: "
+                                + effectiveAction,
                         "Sistema"));
                 actionPlanRepository.save(draftPlan);
             }
@@ -197,22 +227,39 @@ public class TestService {
     @Transactional(readOnly = true)
     public List<PlanningItemDTO> listPlanningItems() {
         return planningItemRepository.findAll().stream()
-                .map(p -> new PlanningItemDTO(
-                        p.getId(),
-                        p.getScopeItem().getId(),
-                        p.getScopeItem().getNome(),
-                        p.getScopeItem().getArea().getNome(),
-                        p.getScopeItem().getArea().getDirectorate().getNome(),
-                        p.getScopeItem().getRiskLevel() != null ? p.getScopeItem().getRiskLevel().name() : "N/A",
-                        p.getMes(),
-                        p.getAno(),
-                        p.getStatus(),
-                        "Responsável TI", // Placeholder
-                        executionRecordRepository.findByPlanningItemId(p.getId())
-                                .map(e -> e.getConformityPercentage() != null
-                                        ? e.getConformityPercentage().doubleValue()
-                                        : 0.0)
-                                .orElse(null)))
+                .map(p -> {
+                    var execution = executionRecordRepository.findByPlanningItemId(p.getId()).orElse(null);
+                    Double compliance = execution != null && execution.getConformityPercentage() != null
+                            ? execution.getConformityPercentage().doubleValue()
+                            : null;
+
+                    String conformityLevel = null;
+                    String conformityColor = null;
+                    if (compliance != null) {
+                        UUID instId = p.getScopeItem().getArea().getDirectorate().getInstitution().getId();
+                        var result = matrixConfigService.resolveComplianceLabel(
+                                instId, java.math.BigDecimal.valueOf(compliance));
+                        if (result != null) {
+                            conformityLevel = result.label();
+                            conformityColor = result.color();
+                        }
+                    }
+
+                    return new PlanningItemDTO(
+                            p.getId(),
+                            p.getScopeItem().getId(),
+                            p.getScopeItem().getNome(),
+                            p.getScopeItem().getArea().getNome(),
+                            p.getScopeItem().getArea().getDirectorate().getNome(),
+                            p.getScopeItem().getRiskLevel() != null ? p.getScopeItem().getRiskLevel().name() : "N/A",
+                            p.getMes(),
+                            p.getAno(),
+                            p.getStatus(),
+                            "Responsável TI", // Placeholder
+                            compliance,
+                            conformityLevel,
+                            conformityColor);
+                })
                 .toList();
     }
 }

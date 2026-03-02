@@ -25,11 +25,19 @@ spring:
           content:
             enabled: true
             paths: "/**"
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
   devtools:
     restart:
       enabled: true
     livereload:
       enabled: true
+
+nomos:
+  storage:
+    upload-dir: ./uploads
 
 api:
   security:

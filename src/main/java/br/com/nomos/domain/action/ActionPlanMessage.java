@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Table(name = "action_plan_messages")
@@ -31,6 +33,9 @@ public class ActionPlanMessage {
 
     @Column(name = "user_name")
     private String userName;
+
+    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MessageAttachment> attachments = new ArrayList<>();
 
     @Column(nullable = false)
     private LocalDateTime date;

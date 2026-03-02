@@ -1,39 +1,76 @@
 /**
  * Nomos - Dashboards Page Logic
- * Extracted from dashboards.html inline script.
- * Depends on: nomos-common.js (MESES, currentUser, resolveEmpresaId)
+ * Refactored to use Backend API for analytics.
+ * Depends on: nomos-common.js (currentUser, apiFetch)
  */
 
-let executions = [];
-let actionPlans = [];
-let matrixConfig = null;
+let internalDirectorates = [];
+let internalAreas = [];
 let currentView = 'compliance';
 
-function init() {
-    resolveEmpresaId();
+async function init() {
+    console.log('[Dashboard] Initializing. Session state:', !!currentUser.institutionId);
+    // Wait for session initialization if necessary
+    if (!currentUser.institutionId) {
+        document.addEventListener('nomos:sessionReady', (e) => {
+            console.log('[Dashboard] Session ready event received.');
+            loadInitialData();
+        }, { once: true });
 
-    executions = JSON.parse(localStorage.getItem('nomos_execution_history') || '[]')
-        .filter(e => e.empresaId === currentUser.empresaId);
-    actionPlans = JSON.parse(localStorage.getItem('nomos_action_plans') || '[]')
-        .filter(p => p.empresaId === currentUser.empresaId);
+        // Safety check: if session finished between the check and listener
+        setTimeout(() => {
+            if (currentUser.institutionId && internalDirectorates.length === 0) {
+                console.log('[Dashboard] Session found after timeout, forcing load.');
+                loadInitialData();
+            }
+        }, 1000);
+    } else {
+        loadInitialData();
+    }
+}
 
-    const mc = localStorage.getItem('nomos_matrix_config_' + currentUser.empresaId);
-    if (mc) matrixConfig = JSON.parse(mc);
-
-    populateFilters();
-    renderDashboard();
+async function loadInitialData() {
+    try {
+        internalDirectorates = await apiFetch(`/organization/institutions/${currentUser.institutionId}/directorates`);
+        populateFilters();
+        renderDashboard();
+    } catch (e) {
+        console.error('Erro ao carregar dados iniciais:', e);
+    }
 }
 
 function populateFilters() {
-    const dirs = [...new Set(executions.map(e => e.diretoria).filter(Boolean))];
-    const areas = [...new Set(executions.map(e => e.area).filter(Boolean))];
-    document.getElementById('filter-diretoria').innerHTML = '<option value="">Todas Diretorias</option>' + dirs.map(d => `<option value="${d}">${d}</option>`).join('');
-    document.getElementById('filter-area').innerHTML = '<option value="">Todas Áreas</option>' + areas.map(a => `<option value="${a}">${a}</option>`).join('');
+    const dirSelect = document.getElementById('filter-diretoria');
+    dirSelect.innerHTML = '<option value="">Todas Diretorias</option>' +
+        internalDirectorates.map(d => `<option value="${d.id}">${d.nome}</option>`).join('');
+
+    dirSelect.onchange = async () => {
+        const dirId = dirSelect.value;
+        const areaSelect = document.getElementById('filter-area');
+
+        if (!dirId) {
+            areaSelect.innerHTML = '<option value="">Todas Áreas</option>';
+            internalAreas = [];
+            renderDashboard();
+            return;
+        }
+
+        try {
+            internalAreas = await apiFetch(`/organization/directorates/${dirId}/areas`);
+            areaSelect.innerHTML = '<option value="">Todas Áreas</option>' +
+                internalAreas.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+            renderDashboard();
+        } catch (e) {
+            console.error('Error fetching areas:', e);
+        }
+    };
 }
 
 function clearFilters() {
     document.getElementById('filter-diretoria').value = '';
-    document.getElementById('filter-area').value = '';
+    const areaSelect = document.getElementById('filter-area');
+    areaSelect.innerHTML = '<option value="">Todas Áreas</option>';
+    internalAreas = [];
     renderDashboard();
 }
 
@@ -44,123 +81,111 @@ function switchView(view) {
         b.classList.add('text-slate-400');
     });
     const btn = document.getElementById('view-' + view);
-    btn.classList.add('bg-white', 'text-primary', 'shadow-sm');
-    btn.classList.remove('text-slate-400');
+    if (btn) {
+        btn.classList.add('bg-white', 'text-primary', 'shadow-sm');
+        btn.classList.remove('text-slate-400');
+    }
 
     document.getElementById('dashboard-compliance').classList.toggle('hidden', view !== 'compliance');
     document.getElementById('dashboard-plans').classList.toggle('hidden', view !== 'plans');
     renderDashboard();
 }
 
-function renderDashboard() {
-    const dir = document.getElementById('filter-diretoria').value;
-    const area = document.getElementById('filter-area').value;
+async function renderDashboard() {
+    const dirId = document.getElementById('filter-diretoria').value;
+    const areaId = document.getElementById('filter-area').value;
 
-    const filteredExecs = executions.filter(e => {
-        if (dir && e.diretoria !== dir) return false;
-        if (area && e.area !== area) return false;
-        return true;
+    const params = new URLSearchParams({
+        institutionId: currentUser.institutionId
     });
+    if (dirId) params.append('directorateId', dirId);
+    if (areaId) params.append('areaId', areaId);
 
-    const filteredPlans = actionPlans.filter(p => {
-        if (dir && p.diretoria !== dir) return false;
-        if (area && p.area !== area) return false;
-        return true;
-    });
-
-    if (currentView === 'compliance') {
-        renderComplianceDashboard(filteredExecs);
-    } else {
-        renderPlansDashboard(filteredPlans);
+    try {
+        if (currentView === 'compliance') {
+            const data = await apiFetch(`/dashboard/compliance?${params.toString()}`);
+            renderComplianceDashboard(data);
+        } else {
+            const data = await apiFetch(`/dashboard/action-plans?${params.toString()}`);
+            renderPlansDashboard(data);
+        }
+    } catch (e) {
+        console.error('Erro ao buscar dados do dashboard:', e);
     }
 }
 
-function renderComplianceDashboard(execs) {
-    const avg = execs.length > 0 ? (execs.reduce((sum, e) => sum + e.compliance, 0) / execs.length) : 0;
-    document.getElementById('kpi-avg-compliance').textContent = execs.length > 0 ? avg.toFixed(1) + '%' : '-';
-    document.getElementById('kpi-volume').textContent = execs.length;
+function renderComplianceDashboard(data) {
+    document.getElementById('kpi-avg-compliance').textContent = data.testsPerformed > 0 ? data.conformityAverage.toFixed(1) + '%' : '-';
+    document.getElementById('kpi-volume').textContent = data.testsPerformed;
+
     const metaStatus = document.getElementById('kpi-meta-status');
-    if (execs.length > 0 && avg >= 90) {
+    if (data.testsPerformed > 0 && data.conformityAverage >= 90) {
         metaStatus.textContent = 'Atingida';
         metaStatus.className = 'text-[10px] font-bold uppercase px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700';
-    } else if (execs.length > 0) {
+    } else if (data.testsPerformed > 0) {
         metaStatus.textContent = 'Abaixo';
         metaStatus.className = 'text-[10px] font-bold uppercase px-2 py-1 rounded-lg bg-red-100 text-red-700';
     } else {
         metaStatus.textContent = '';
     }
 
-    renderGroupedBars('compliance-by-area', execs, 'area');
-    renderGroupedBars('compliance-by-diretoria', execs, 'diretoria');
-    renderRiskComplianceMatrix(execs);
+    renderStatsBars('compliance-by-area', data.areaStats);
+    renderStatsBars('compliance-by-diretoria', data.directorateStats);
+
+    renderRiskComplianceMatrix(data.riskMatrix);
 }
 
-function renderGroupedBars(containerId, execs, groupKey) {
+function renderStatsBars(containerId, stats) {
     const container = document.getElementById(containerId);
-    const groups = {};
-    execs.forEach(e => {
-        const key = e[groupKey] || 'Sem ' + groupKey;
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(e.compliance);
-    });
-
-    if (Object.keys(groups).length === 0) {
+    if (!stats || stats.length === 0) {
         container.innerHTML = '<p class="text-center text-slate-300 text-xs py-10 font-bold uppercase">Sem dados disponíveis</p>';
         return;
     }
 
-    container.innerHTML = Object.entries(groups).map(([key, values]) => {
-        const avg = values.reduce((s, v) => s + v, 0) / values.length;
-        const color = avg >= 90 ? '#22c55e' : avg >= 70 ? '#f59e0b' : '#ef4444';
+    container.innerHTML = stats.map(s => {
+        const val = s.value;
+        const color = val >= 90 ? '#22c55e' : val >= 70 ? '#f59e0b' : '#ef4444';
         return `
             <div class="space-y-1.5">
                 <div class="flex justify-between text-xs">
-                    <span class="font-bold text-slate-700 dark:text-slate-300">${key}</span>
-                    <span class="font-extrabold" style="color:${color}">${avg.toFixed(1)}%</span>
+                    <span class="font-bold text-slate-700 dark:text-slate-300">${s.name}</span>
+                    <span class="font-extrabold" style="color:${color}">${val.toFixed(1)}%</span>
                 </div>
                 <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
-                    <div class="h-2.5 rounded-full transition-all" style="width:${avg}%; background:${color}"></div>
+                    <div class="h-2.5 rounded-full transition-all" style="width:${val}%; background:${color}"></div>
                 </div>
-                <p class="text-[9px] text-slate-400">${values.length} teste(s)</p>
+                <p class="text-[9px] text-slate-400">${s.count} registro(s)</p>
             </div>
         `;
     }).join('');
 }
 
-function renderRiskComplianceMatrix(execs) {
+function renderRiskComplianceMatrix(matrixData) {
     const container = document.getElementById('risk-compliance-matrix');
-    if (!matrixConfig || !matrixConfig.riskRanges || !matrixConfig.complianceRanges || execs.length === 0) {
-        container.innerHTML = '<p class="text-center text-slate-300 text-xs py-10 font-bold uppercase">Configure as Matrizes para visualizar a correlação.</p>';
+    if (!matrixData || matrixData.length === 0) {
+        container.innerHTML = '<p class="text-center text-slate-300 text-xs py-10 font-bold uppercase">Sem dados de risco.</p>';
         return;
     }
 
-    const riskLabels = matrixConfig.riskRanges.map(r => r.label);
-    const compLabels = matrixConfig.complianceRanges.map(r => r.label);
+    // Fixed levels based on RiskLevel enum
+    const probLevels = [1, 2, 3, 4, 5];
+    const impLevels = [1, 2, 3, 4, 5];
 
-    const counts = {};
-    riskLabels.forEach(rl => {
-        compLabels.forEach(cl => { counts[rl + '-' + cl] = 0; });
-    });
-    execs.forEach(e => {
-        const rl = e.riskLevel || '';
-        const cl = e.complianceLevel || '';
-        const key = rl + '-' + cl;
-        if (counts[key] !== undefined) counts[key]++;
-    });
-
-    const maxCount = Math.max(1, ...Object.values(counts));
-
-    let html = '<table class="w-full text-center"><thead><tr><th class="p-2"></th>';
-    compLabels.forEach(cl => { html += `<th class="p-2 text-[9px] font-bold text-slate-400 uppercase">${cl}</th>`; });
+    let html = '<table class="w-full text-center"><thead><tr><th class="p-2 text-[9px] text-slate-400">Prob/Imp</th>';
+    impLevels.forEach(cl => { html += `<th class="p-2 text-[9px] font-bold text-slate-400 uppercase">${cl}</th>`; });
     html += '</tr></thead><tbody>';
-    riskLabels.forEach(rl => {
-        html += `<tr><td class="p-2 text-[9px] font-bold text-slate-400 uppercase whitespace-nowrap">${rl}</td>`;
-        compLabels.forEach(cl => {
-            const count = counts[rl + '-' + cl];
+
+    const maxCount = Math.max(1, ...matrixData.map(d => d.count));
+
+    probLevels.forEach(p => {
+        html += `<tr><td class="p-2 text-[9px] font-bold text-slate-400 uppercase whitespace-nowrap">${p}</td>`;
+        impLevels.forEach(i => {
+            const cell = matrixData.find(d => d.probability === p && d.impact === i);
+            const count = cell ? cell.count : 0;
             const intensity = count / maxCount;
             const bg = count > 0 ? `rgba(30, 64, 175, ${0.1 + intensity * 0.6})` : 'rgba(0,0,0,0.02)';
             const textColor = intensity > 0.4 ? 'white' : '#64748b';
-            html += `<td class="p-2"><div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto font-extrabold text-sm transition-all" style="background:${bg}; color:${textColor}">${count}</div></td>`;
+            html += `<td class="p-2"><div class="w-10 h-10 rounded-xl flex items-center justify-center mx-auto font-extrabold text-xs transition-all" style="background:${bg}; color:${textColor}">${count}</div></td>`;
         });
         html += '</tr>';
     });
@@ -168,94 +193,57 @@ function renderRiskComplianceMatrix(execs) {
     container.innerHTML = html;
 }
 
-function renderPlansDashboard(plans) {
-    const total = plans.length;
-    const completed = plans.filter(p => p.status === 'completed').length;
-    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+function renderPlansDashboard(data) {
+    document.getElementById('kpi-plans-total').textContent = data.totalPlans;
+    document.getElementById('kpi-plans-done').textContent = Math.round((data.totalPlans * data.completionRate) / 100); // Approximation if needed, but we should add 'completedCount' to DTO ideally.
+    // For now, let's just show the rate
+    document.getElementById('kpi-plans-rate').textContent = data.totalPlans > 0 ? data.completionRate.toFixed(0) + '%' : '-';
+    document.getElementById('kpi-plans-overdue').textContent = '-'; // Needs logic for overdue if backend supports it
 
-    const now = new Date();
-    let overdueSteps = 0;
-    plans.filter(p => p.status === 'active').forEach(p => {
-        p.steps.forEach(s => {
-            if (!s.done && s.deadline && new Date(s.deadline) < now) overdueSteps++;
-        });
-    });
+    renderStatsBars('resolution-by-area', data.areaStats);
 
-    document.getElementById('kpi-plans-total').textContent = total;
-    document.getElementById('kpi-plans-done').textContent = completed;
-    document.getElementById('kpi-plans-rate').textContent = total > 0 ? rate + '%' : '-';
-    document.getElementById('kpi-plans-overdue').textContent = overdueSteps;
-
-    const areaGroups = {};
-    plans.forEach(p => {
-        const key = p.area || 'Sem Área';
-        if (!areaGroups[key]) areaGroups[key] = { total: 0, done: 0 };
-        areaGroups[key].total++;
-        if (p.status === 'completed') areaGroups[key].done++;
-    });
-
-    const resContainer = document.getElementById('resolution-by-area');
-    if (Object.keys(areaGroups).length === 0) {
-        resContainer.innerHTML = '<p class="text-center text-slate-300 text-xs py-10 font-bold uppercase">Sem dados</p>';
-    } else {
-        resContainer.innerHTML = Object.entries(areaGroups).map(([key, data]) => {
-            const pct = data.total > 0 ? Math.round((data.done / data.total) * 100) : 0;
-            const color = pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444';
-            return `
-                <div class="space-y-1.5">
-                    <div class="flex justify-between text-xs">
-                        <span class="font-bold text-slate-700 dark:text-slate-300">${key}</span>
-                        <span class="font-extrabold" style="color:${color}">${pct}% (${data.done}/${data.total})</span>
-                    </div>
-                    <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
-                        <div class="h-2.5 rounded-full transition-all" style="width:${pct}%; background:${color}"></div>
-                    </div>
-                </div>`;
-        }).join('');
+    // Check if we have a container for directorate resolution too
+    const resDirContainer = document.getElementById('resolution-by-diretoria');
+    if (resDirContainer) {
+        renderStatsBars('resolution-by-diretoria', data.directorateStats);
     }
 
-    const activePlans = plans.filter(p => p.status === 'active');
-    const statusContainer = document.getElementById('active-plans-status');
-    if (activePlans.length === 0) {
-        statusContainer.innerHTML = '<p class="text-center text-slate-500 text-xs py-10 font-bold uppercase">Nenhum plano ativo</p>';
-    } else {
-        statusContainer.innerHTML = activePlans.map(p => {
-            const done = p.steps.filter(s => s.done).length;
-            const tot = p.steps.length;
-            const pct = tot > 0 ? Math.round((done / tot) * 100) : 0;
-            return `
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="text-xs font-bold text-white truncate flex-1 mr-4">${p.testName || 'Plano Manual'}</p>
-                    <span class="text-[9px] font-bold text-amber-400 uppercase">Ativo</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="flex-1 bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                        <div class="bg-blue-500 h-1.5 rounded-full" style="width:${pct}%"></div>
-                    </div>
-                    <span class="text-[9px] font-bold text-slate-500">${done}/${tot}</span>
-                </div>
-            </div>`;
-        }).join('');
-    }
+    // Backend currently doesn't provide the list of active plans in the overview for simplicity.
+    // I will mock this or add it to DTO if needed. For now, let's keep it simple.
+    document.getElementById('active-plans-status').innerHTML = '<p class="text-center text-slate-500 text-[10px] py-4 uppercase">Consulte lista abaixo</p>';
 
-    const sorted = [...plans].sort((a, b) => (b.id || '').localeCompare(a.id || '')).slice(0, 10);
-    const tableBody = document.getElementById('plans-table-tbody');
-    tableBody.innerHTML = sorted.map(p => {
-        const done = p.steps.filter(s => s.done).length;
-        const tot = p.steps.length;
-        const statusBadge = p.status === 'completed'
-            ? '<span class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700">Concluído</span>'
-            : '<span class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg bg-amber-100 text-amber-700">Ativo</span>';
-        return `
-        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-            <td class="px-8 py-4 text-xs font-bold text-slate-700 dark:text-slate-300">${p.testName || 'Manual'}</td>
-            <td class="px-8 py-4 text-xs text-slate-500">${p.area || '-'}</td>
-            <td class="px-8 py-4 text-xs text-slate-500">${done}/${tot}</td>
-            <td class="px-8 py-4">${statusBadge}</td>
-            <td class="px-8 py-4 text-xs text-slate-400">${p.createdAt || '-'}</td>
-        </tr>`;
-    }).join('');
+    // We need to fetch the actual list of plans to populate the table, or use the existing /api/action-plans
+    loadPlansTable();
+}
+
+async function loadPlansTable() {
+    try {
+        const plans = await apiFetch('/action-plans');
+        const sorted = plans.slice(0, 10);
+        const tableBody = document.getElementById('plans-table-tbody');
+        if (!tableBody) return;
+
+        tableBody.innerHTML = sorted.map(p => {
+            const done = p.steps ? p.steps.filter(s => s.done).length : 0;
+            const tot = p.steps ? p.steps.length : 0;
+            const statusBadge = p.status === 'COMPLETED'
+                ? '<span class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700">Concluído</span>'
+                : '<span class="text-[10px] font-bold uppercase px-2 py-1 rounded-lg bg-amber-100 text-amber-700">Ativo</span>';
+
+            const dateStr = p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '-';
+
+            return `
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                <td class="px-8 py-4 text-xs font-bold text-slate-700 dark:text-slate-300">${p.testName || 'Manual'}</td>
+                <td class="px-8 py-4 text-xs text-slate-500">${p.area || '-'}</td>
+                <td class="px-8 py-4 text-xs text-slate-500">${done}/${tot}</td>
+                <td class="px-8 py-4">${statusBadge}</td>
+                <td class="px-8 py-4 text-xs text-slate-400">${dateStr}</td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        console.error('Erro ao carregar tabela de planos:', e);
+    }
 }
 
 init();

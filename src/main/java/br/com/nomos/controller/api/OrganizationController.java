@@ -1,6 +1,7 @@
 package br.com.nomos.controller.api;
 
 import br.com.nomos.dto.organization.AreaDTO;
+import br.com.nomos.dto.organization.CostCenterDTO;
 import br.com.nomos.dto.organization.DirectorateDTO;
 import br.com.nomos.dto.organization.InstitutionDTO;
 import br.com.nomos.service.OrganizationService;
@@ -60,5 +61,18 @@ public class OrganizationController {
     public AreaDTO createArea(@RequestBody AreaDTO dto) {
         var area = organizationService.createArea(dto.nome(), dto.directorateId());
         return new AreaDTO(area.getId(), area.getNome(), area.getDirectorate().getId());
+    }
+
+    @GetMapping("/institutions/{id}/cost-centers")
+    public List<CostCenterDTO> listCostCenters(@PathVariable UUID id) {
+        return organizationService.listCostCentersByInstitution(id).stream()
+                .map(c -> new CostCenterDTO(c.getId(), c.getNome(), c.getCodigo(), c.getInstitution().getId()))
+                .toList();
+    }
+
+    @PostMapping("/cost-centers")
+    public CostCenterDTO createCostCenter(@RequestBody CostCenterDTO dto) {
+        var cc = organizationService.createCostCenter(dto.nome(), dto.codigo(), dto.institutionId());
+        return new CostCenterDTO(cc.getId(), cc.getNome(), cc.getCodigo(), cc.getInstitution().getId());
     }
 }

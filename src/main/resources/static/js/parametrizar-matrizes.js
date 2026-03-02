@@ -4,14 +4,33 @@
  * This page is mostly autonomous and does not use nomos-common.js utilities.
  */
 
-const STORAGE_KEY = 'nomos_matrix_config_global';
 const MAINTENANCE_ACTIONS = [
     'Em manutenção sem acompanhamento',
     'Em manutenção com acompanhamento',
     'Necessita plano de ação'
 ];
 
-let state = loadState();
+let state = defaultState();
+
+function updateInstitutionHeader() {
+    const instEl = document.getElementById('institution-name');
+    if (instEl) instEl.textContent = currentUser.institutionName || 'Global';
+}
+
+async function init() {
+    // Wait for session and data before rendering
+    if (!currentUser.institutionId) {
+        document.addEventListener('nomos:sessionReady', async () => {
+            updateInstitutionHeader();
+            await loadStateFromApi();
+            switchMatrixTab('risk');
+        }, { once: true });
+    } else {
+        updateInstitutionHeader();
+        await loadStateFromApi();
+        switchMatrixTab('risk');
+    }
+}
 
 function defaultState() {
     return {
@@ -36,17 +55,55 @@ function defaultState() {
     };
 }
 
-function loadState() {
+async function loadStateFromApi() {
+    if (!currentUser.institutionId) return;
     try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) return JSON.parse(saved);
-    } catch (e) { console.warn('Failed to load state', e); }
-    return defaultState();
+        const data = await apiFetch(`/matrix-config/${currentUser.institutionId}`);
+        if (data && typeof data === 'object') {
+            state = { ...defaultState(), ...data };
+            // Ensure arrays exist
+            if (!Array.isArray(state.riskDimensions)) state.riskDimensions = defaultState().riskDimensions;
+            if (!Array.isArray(state.riskRanges)) state.riskRanges = defaultState().riskRanges;
+            if (!Array.isArray(state.complianceRanges)) state.complianceRanges = defaultState().complianceRanges;
+
+            // Re-sync local storage fallback for other screens (temp compat)
+            localStorage.setItem('nomos_matrix_config', JSON.stringify(state));
+        }
+    } catch (e) {
+        console.warn('[Nomos] Failed to load matrix state from server, using defaults.', e);
+        state = defaultState();
+    }
 }
 
-function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    localStorage.setItem('nomos_matrix_config', JSON.stringify(state));
+async function saveState() {
+    if (!currentUser.institutionId) {
+        showToast('Erro: Sessão não encontrada. Não é possível salvar.');
+        return;
+    }
+    try {
+        await apiFetch(`/matrix-config/${currentUser.institutionId}`, {
+            method: 'POST',
+            body: JSON.stringify(state)
+        });
+        // Update local storage for immediate sync with other tabs if needed
+        localStorage.setItem('nomos_matrix_config', JSON.stringify(state));
+    } catch (e) {
+        console.error('[Nomos] Error saving matrix state:', e);
+        showToast('Erro ao salvar no servidor.');
+        throw e;
+    }
+}
+
+async function resetState() {
+    if (confirm('Deseja realmente restaurar os padrões globais no servidor? Isso apagará todas as customizações da matriz para sua instituição.')) {
+        state = defaultState();
+        try {
+            await saveState();
+            location.reload();
+        } catch (e) {
+            console.error(e);
+        }
+    }
 }
 
 function showToast(msg) {
@@ -112,9 +169,9 @@ function renderDimensions() {
     `;
         container.appendChild(div);
     });
-    const maxVal = state.riskRanges.length > 0 ? Math.max(...state.riskRanges.map(r => r.max)) : 25;
-    const axisLimit = Math.min(22, Math.max(5, Math.ceil(Math.sqrt(maxVal))));
-    const maxScore = Math.pow(axisLimit, state.riskDimensions.length);
+    const maxVal = (state.riskRanges && state.riskRanges.length > 0) ? Math.max(...state.riskRanges.filter(r => r && typeof r.max === 'number').map(r => r.max)) : 25;
+    const axisLimit = Math.min(22, Math.max(5, Math.ceil(Math.sqrt(Math.max(1, maxVal)))));
+    const maxScore = Math.pow(axisLimit, (state.riskDimensions ? state.riskDimensions.length : 2));
     const scoreInfo = document.getElementById('riskScoreInfo');
     if (scoreInfo) scoreInfo.textContent = `SCORE MÁX (Escala ${axisLimit}): ${maxScore}`;
 }
@@ -197,8 +254,8 @@ function renderHeatmap() {
     grid.innerHTML = '';
 
     const getColor = (score) => {
-        const range = state.riskRanges.find(r => score >= r.min && score <= r.max);
-        return range ? range.color : '#e5e7eb';
+        const range = state.riskRanges.find(r => r && score >= r.min && score <= r.max);
+        return (range && range.color) ? range.color : '#e5e7eb';
     };
 
     const fontSize = axisLimit > 15 ? '7px' : axisLimit > 10 ? '9px' : '10px';
@@ -226,9 +283,11 @@ function renderHeatmap() {
     }
 }
 
-function saveRisk() {
-    saveState();
-    showToast('Parametrização de Risco salva com sucesso!');
+async function saveRisk() {
+    try {
+        await saveState();
+        showToast('Parametrização de Risco salva com sucesso no servidor!');
+    } catch (e) { }
 }
 
 // =====================================================================
@@ -257,9 +316,9 @@ function renderCompliance() {
         </td>
         <td class="px-5 py-3.5">
             <div class="relative w-8 h-8">
-                <input type="color" value="${range.color}" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                <input type="color" value="${range.color || '#94a3b8'}" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
                     oninput="updateComplianceRange('${range.id}','color',this.value); this.nextElementSibling.style.backgroundColor=this.value">
-                <div class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm hover:scale-110 transition-transform" style="background-color:${range.color}"></div>
+                <div class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm hover:scale-110 transition-transform" style="background-color:${range.color || '#94a3b8'}"></div>
             </div>
         </td>
         <td class="px-5 py-3.5 text-center">
@@ -325,9 +384,11 @@ function updateComplianceRange(id, field, value) {
     if (field === 'label') updateComplianceThresholdLabel();
 }
 
-function saveCompliance() {
-    saveState();
-    showToast('Parametrização de Conformidade salva com sucesso!');
+async function saveCompliance() {
+    try {
+        await saveState();
+        showToast('Parametrização de Conformidade salva com sucesso no servidor!');
+    } catch (e) { }
 }
 
 // =====================================================================
@@ -397,11 +458,13 @@ function cycleMaintenanceCell(risk, compliance) {
     renderMaintenance();
 }
 
-function saveMaintenance() {
-    saveState();
-    showToast('Matriz de Manutenção salva com sucesso!');
+async function saveMaintenance() {
+    try {
+        await saveState();
+        showToast('Matriz de Manutenção salva com sucesso no servidor!');
+    } catch (e) { }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    switchMatrixTab('risk');
+    init();
 });

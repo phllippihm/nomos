@@ -15,5 +15,8 @@ public record ExecutionRecordDTO(
         BigDecimal conformityPercentage,
         Double score,
         String nonConformities,
-        String actionTaken) {
+        String actionTaken,
+        String conformityLevel,
+        String conformityColor,
+        String priorityAction) {
 }

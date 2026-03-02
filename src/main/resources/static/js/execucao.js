@@ -193,8 +193,12 @@ function renderHistory() {
 
     tbody.innerHTML = history.map(h => {
         const comp = h.conformityPercentage || 0;
-        const compColor = comp >= 90 ? 'text-emerald-600' : comp >= 70 ? 'text-amber-500' : 'text-red-500';
+        // Use backend-provided conformity color if available, otherwise fallback to hardcoded
+        const compColorStyle = h.conformityColor ? `color:${h.conformityColor}` : '';
+        const compColorClass = !h.conformityColor ? (comp >= 90 ? 'text-emerald-600' : comp >= 70 ? 'text-amber-500' : 'text-red-500') : '';
         const dateStr = h.testDate ? new Date(h.testDate).toLocaleDateString('pt-BR') : '-';
+        const levelLabel = h.conformityLevel || '';
+        const actionLabel = h.priorityAction || h.actionTaken || '-';
 
         return `
         <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
@@ -204,8 +208,10 @@ function renderHistory() {
                 <p class="text-[10px] text-slate-400 uppercase font-bold">Responsável: ${h.responsible || '-'}</p>
             </td>
             <td class="px-8 py-5 text-xs text-slate-500">${h.sampleSize} / ${h.nonConforming} NC</td>
-            <td class="px-8 py-5 font-extrabold text-sm ${compColor}">${comp.toFixed(1)}%</td>
-            <td class="px-8 py-5 text-xs font-bold text-slate-500">${h.actionTaken || '-'}</td>
+            <td class="px-8 py-5 font-extrabold text-sm ${compColorClass}" style="${compColorStyle}">
+                ${comp.toFixed(1)}%${levelLabel ? ` <span class="text-[10px] font-bold uppercase">${levelLabel}</span>` : ''}
+            </td>
+            <td class="px-8 py-5 text-xs font-bold text-slate-500">${actionLabel}</td>
             <td class="px-6 py-5 text-right space-x-2">
                 <button class="text-primary text-[10px] font-bold hover:underline">Ver Detalhes</button>
             </td>

@@ -44,3 +44,18 @@ manual_content.txt
 manual_preview.txt
 sheet_*.md
 *.log
+
+### Project Specific Ignored ###
+.claude/
+CLAUDE.md
+context.md
+exemplos/
+full_mock_data.sql
+mock_data.sql
+planos-futuros/
+uploads/
+image.png
+teste-word.docx
+*.pdf
+*.docx
+
